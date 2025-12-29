@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Filtered Announcements{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">Filtered Announcements</h1>
+    <div class="row">
+        <!-- Main Content Area -->
+        <div class="col-md-12">
+            {% if page_obj %}
+                <div class="row">
+                    {% for annonce in page_obj.object_list %}
+                        <div class="col-md-4 mb-4">
+                            <a href="{% url 'single_annonce' annonce.id %}" style="text-decoration: none;">
+                                <div class="card">
+                                    {% if annonce.images and annonce.images|length > 0 %}
+                                        <img 
+                                            src="{{ annonce.images.0 }}" 
+                                            class="card-img-top img-fluid" 
+                                            alt="Image for {{ annonce.title }}"
+                                            style="object-fit: cover; height: 200px;">
+                                    {% endif %}
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ annonce.title }}</h5>
+                                        <p class="card-text">{{ annonce.description }}</p>
+                                        <p class="card-text">{{ annonce.size }}</p>
+                                        {% if annonce.state %}
+                                        <p class="card-text">{{ annonce.state }}</p>
+                                        {% elif annonce.delegation %}
+                                        <p class="card-text">{{ annonce.delegation }}</p>
+                                        {% else %}
+                                        <p class="card-text">{{ annonce.jurisdiction }}</p>
+                                        {% endif %}
+                                        <p class="card-text">
+                                            <strong>Price:</strong> {{ annonce.price }} TND
+                                        </p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination justify-content-center mt-4">
+                    {% if page_obj.has_previous %}
+                        <a class="page-link" href="?page=1">« First</a>
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                    {% endif %}
+
+                    <span class="page-link active">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+                    {% if page_obj.has_next %}
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last »</a>
+                    {% endif %}
+                </div>
+
+            {% else %}
+                <p class="text-center">No annonces available.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // JavaScript to handle toggle status change with AJAX
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleButtons = document.querySelectorAll('.form-check-input');
+        
+        toggleButtons.forEach(function(button) {
+            button.addEventListener('change', function() {
+                const annonceId = button.getAttribute('data-annonce-id');
+                const isActive = button.checked;
+                
+                // AJAX request to update status
+                fetch(`/update_status/${annonceId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'  // Include CSRF token
+                    },
+                    body: JSON.stringify({ is_active: isActive })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Optionally show a message or update UI
+                        alert('Status updated successfully');
+                    } else {
+                        alert('Failed to update status');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while updating status');
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

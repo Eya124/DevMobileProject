@@ -1,0 +1,20 @@
+version: "3.3"
+services:
+ 
+  db:
+      image: "postgres:15"
+      container_name: app-db-container
+      environment:
+        - POSTGRES_DB=postgres
+        - POSTGRES_USER=postgres
+        - POSTGRES_PASSWORD=flutter1223
+      ports:
+        - '5391:5432'
+
+      volumes:
+        - pgdb:/var/lib/postgresql/data
+        - ./list_tables:/list_tables
+
+volumes:
+  pgdb:
+

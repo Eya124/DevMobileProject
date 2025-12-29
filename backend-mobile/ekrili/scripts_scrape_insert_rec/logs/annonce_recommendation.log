@@ -1,0 +1,20 @@
+2025-12-09 09:22:01,242 - INFO - Starting processing of folder: media/scraping_folder_data
+2025-12-09 09:22:01,296 - ERROR - Fatal error: [Errno 2] No such file or directory: 'media/scraping_folder_data'
+Traceback (most recent call last):
+  File "/mnt/d/files_content/esprit/4ALINFO/mobile/ekri_project/ekrili/scripts_scrape_insert_rec/insert_data_scraped_and_recommandation.py", line 399, in <module>
+    process_folders('media/scraping_folder_data')
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/d/files_content/esprit/4ALINFO/mobile/ekri_project/ekrili/scripts_scrape_insert_rec/insert_data_scraped_and_recommandation.py", line 277, in process_folders
+    for folder_name in os.listdir(main_folder):
+                       ~~~~~~~~~~^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'media/scraping_folder_data'
+2025-12-09 09:24:04,833 - INFO - Starting processing of folder: media/scraping_folder_data
+2025-12-09 09:24:04,892 - ERROR - Fatal error: [Errno 2] No such file or directory: 'media/scraping_folder_data'
+Traceback (most recent call last):
+  File "/mnt/d/files_content/esprit/4ALINFO/mobile/ekri_project/ekrili/scripts_scrape_insert_rec/insert_data_scraped_and_recommandation.py", line 399, in <module>
+    process_folders('media/scraping_folder_data')
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/d/files_content/esprit/4ALINFO/mobile/ekri_project/ekrili/scripts_scrape_insert_rec/insert_data_scraped_and_recommandation.py", line 277, in process_folders
+    for folder_name in os.listdir(main_folder):
+                       ~~~~~~~~~~^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'media/scraping_folder_data'

@@ -1,0 +1,11 @@
+go to cmd ==> pwd
+pwd = pwd
+mysql -u root -p
+press enter
+CREATE DATABASE ekri;
+USE ekri;
+SOURCE /home/heni/ekrili/list_tables/states.sql;
+SOURCE /home/heni/ekrili/list_tables/delegations.sql;
+SOURCE /home/heni/ekrili/list_tables/jurisdictions.sql;
+go to project via pwd ==> python3 manage.py migrate
+SOURCE /home/heni/ekrili/list_tables/types.sql;

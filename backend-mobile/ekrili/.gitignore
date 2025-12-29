@@ -1,0 +1,8 @@
+# media/
+node_modules/
+frontend/node_modules/
+**/__pycache__/
+/logs/*
+myenv/
+/static/
+staticfiles/

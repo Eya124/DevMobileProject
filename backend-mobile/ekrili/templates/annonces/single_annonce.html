@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}{{ annonce.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+        <h1 class="text-center mb-4">{{ annonce.title }}</h1>
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <!-- Carousel for images -->
+                {% if annonce.images and annonce.images|length > 0 %}
+                <div id="annonceCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div id="annonceCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            {% for image in annonce.images %}
+                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                    <img src="{{ image }}" class="d-block w-100 img-fluid zoom-image" alt="Image" style="object-fit: contain; height: 400px;">
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#annonceCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#annonceCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted">No images available for this annonce.</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="mt-4">
+            <h3>Description</h3>
+            <p>{{ annonce.description }}</p>
+            
+            <h4>Details</h4>
+            <ul>
+                <li>Size: {{ annonce.size }}</li>
+                <li>Size: {{ annonce.type }}</li>
+                <li>Location: 
+                    {% if annonce.state %}
+                        {{ annonce.state }}
+                    {% elif annonce.delegation %}
+                        {{ annonce.delegation }}
+                    {% else %}
+                        {{ annonce.jurisdiction }}
+                    {% endif %}
+                </li>
+                <li>Price: {{ annonce.price }} TND</li>
+                <li>Phone: {{ annonce.phone }} </li>
+            </ul>
+        </div>
+    </div>
+    <!-- Add Zoom Effect Styles -->
+    <style>
+        .zoom-image {
+            transition: transform 0.5s ease; /* Smooth transition for zoom effect */
+        }
+
+        .zoom-image:hover {
+            transform: scale(1.2); /* Scale the image on hover */
+            cursor: zoom-in; /* Change cursor to zoom-in for better user experience */
+        }
+    </style>
+{% endblock %}

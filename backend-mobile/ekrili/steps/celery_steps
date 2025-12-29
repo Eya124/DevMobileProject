@@ -1,0 +1,6 @@
+sudo apt update
+sudo apt install redis-server -y
+sudo systemctl start redis-server
+sudo systemctl enable redis-server
+test the service ==> redis-cli ping --> got pong
+celery -A ekrili worker --loglevel=info

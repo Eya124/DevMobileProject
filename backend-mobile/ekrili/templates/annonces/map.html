@@ -1,0 +1,40 @@
+{% extends "base.html" %} {% block title %}Home{% endblock %} {% block content
+%}
+<div class="container my-4">
+  <div class="row">
+    <div class="col-12 text-center">
+      <h1 class="mb-4">Map of Tunisia</h1>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-12">
+      <div id="map"></div>
+    </div>
+  </div>
+</div>
+<script>
+  const map = L.map('map').setView([33.8869, 9.5375], 7); // Tunisia's center coordinates
+
+  // Add OpenStreetMap tiles
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+  }).addTo(map);
+
+  // Initialize marker cluster group
+  const markers = L.markerClusterGroup();
+
+  // Add markers dynamically with clustering
+  const annonces = {{ annonces|safe }}; // This should be dynamically rendered by your server
+  annonces.forEach(annonce => {
+      if (annonce.latitude && annonce.longitude) {
+          const popupContent = `<b>${annonce.title}</b><br>${annonce.description}`;
+          const marker = L.marker([annonce.latitude, annonce.longitude])
+              .bindPopup(popupContent);
+          markers.addLayer(marker);
+      }
+  });
+
+  // Add the cluster group to the map
+  map.addLayer(markers);
+</script>
+{% endblock %}

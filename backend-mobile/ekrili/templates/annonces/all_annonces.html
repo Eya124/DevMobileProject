@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">All Annonces</h1>
+    <div class="row">
+        <!-- Sidebar for Filters -->
+        <div class="col-md-3">
+            <form method="GET" action="" class="mb-4">
+                <h4>Filters</h4>
+                <!-- Title search -->
+                <div class="mb-3">
+                    <input 
+                        type="text" 
+                        name="title" 
+                        class="form-control" 
+                        placeholder="Search by title"
+                        value="{{ title_filter }}">
+                </div>
+
+                <!-- State filter dropdown -->
+                <div class="mb-3">
+                    <select name="state" class="form-control">
+                        <option value="">Select State</option>
+                        {% for state in states %}
+                            <option value="{{ state.name }}" {% if state_filter == state %}selected{% endif %}>{{ state.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Delegation filter dropdown -->
+                <div class="mb-3">
+                    <select name="delegation" class="form-control">
+                        <option value="">Select Delegation</option>
+                        {% for delegation in delegations %}
+                            <option value="{{ delegation }}" {% if delegation_filter == delegation %}selected{% endif %}>{{ delegation.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Jurisdiction filter dropdown -->
+                <div class="mb-3">
+                    <select name="jurisdiction" class="form-control">
+                        <option value="">Select Jurisdiction</option>
+                        {% for jurisdiction in jurisdictions %}
+                            <option value="{{ jurisdiction }}" {% if jurisdiction_filter == jurisdiction %}selected{% endif %}>{{ jurisdiction.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Date and Price Filters -->
+                <div class="mb-3">
+                    <input 
+                        type="date" 
+                        name="date_posted_from" 
+                        class="form-control" 
+                        placeholder="Date From" 
+                        value="{{ date_posted_from }}">
+                </div>
+                <div class="mb-3">
+                    <input 
+                        type="number" 
+                        name="price_min" 
+                        class="form-control" 
+                        placeholder="Min Price" 
+                        value="{{ price_min }}">
+                </div>
+                <div class="mb-3">
+                    <input 
+                        type="number" 
+                        name="price_max" 
+                        class="form-control" 
+                        placeholder="Max Price" 
+                        value="{{ price_max }}">
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+            </form>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="col-md-9">
+            {% if page_obj %}
+                <div class="row">
+                    {% for annonce in page_obj.object_list %}
+                        <div class="col-md-4 mb-4">
+                            <a href="{% url 'single_annonce' annonce.id %}" style="text-decoration: none;">
+                                <div class="card">
+                                    {% if annonce.images and annonce.images|length > 0 %}
+                                        <img 
+                                            src="{{ annonce.images.0 }}" 
+                                            class="card-img-top img-fluid" 
+                                            alt="Image for {{ annonce.title }}"
+                                            style="object-fit: cover; height: 200px;">
+                                    {% endif %}
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ annonce.title }}</h5>
+                                        <p class="card-text">{{ annonce.description }}</p>
+                                        <p class="card-text">{{ annonce.size }}</p>
+                                        {% if annonce.state %}
+                                        <p class="card-text">{{ annonce.state }}</p>
+                                        {% elif annonce.delegation %}
+                                        <p class="card-text">{{ annonce.delegation }}</p>
+                                        {% else %}
+                                        <p class="card-text">{{ annonce.jurisdiction }}</p>
+                                        {% endif %}
+                                        <p class="card-text">
+                                            <strong>Price:</strong> {{ annonce.price }} TND
+                                        </p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination justify-content-center mt-4">
+                    {% if page_obj.has_previous %}
+                        <a class="page-link" href="?page=1">« First</a>
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                    {% endif %}
+
+                    <span class="page-link active">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+                    {% if page_obj.has_next %}
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last »</a>
+                    {% endif %}
+                </div>
+
+            {% else %}
+                <p class="text-center">No annonces available.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<!-- Map Modal -->
+<div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mapModalLabel">Map of Tunisia</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="map" style="height: 500px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
