@@ -28,6 +28,9 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  http: ^1.2.0
+  image_picker: ^1.0.4
+  provider: ^6.0.5
   flutter:
     sdk: flutter
 
@@ -51,7 +54,10 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-
+  assets:
+    - assets/logo_ekri.png
+    - assets/map.svg
+    - assets/google_logo.png
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
