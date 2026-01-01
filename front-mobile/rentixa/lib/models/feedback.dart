@@ -34,6 +34,8 @@ class FeedbackModel {
       dislikes: json['dislikes'],
       comment: json['comment'] ?? '',
       userId: json['user_id'],
+      firstName: json['first_name'] ?? '',
+      lastName: json['last_name'] ?? '',
       annonceId: json['annonce'],
       createdAt: DateTime.parse(json['created_at']),
     );
