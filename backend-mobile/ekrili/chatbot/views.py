@@ -6,10 +6,11 @@ from chatbot.models import Chatbot
 from .utils import fetch_annonces
 from rest_framework.decorators import api_view, permission_classes
 from django.http import JsonResponse
+from rest_framework.permissions import AllowAny
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 @api_view(['GET'])
-@permission_classes([])   
+@permission_classes([AllowAny]) 
 def rag_index(request):
 
     annonces = fetch_annonces()
@@ -50,10 +51,11 @@ answer_response = openapi.Schema(
     operation_description="Ask a question to the RAG chatbot and get answer + matched documents"
 )
 @api_view(['POST'])
-@permission_classes([])  
+@permission_classes([AllowAny])  
 def rag_query(request):
     question = request.data.get("question", "").strip().lower()
     user=request.data.get("user", "")
+    print({"user":user})
     answer=generate_response(question)
     data={
         "question": question,
@@ -83,4 +85,27 @@ def get_messages(request,id):
                 "created_at":obj.created_at,
             }
             list_messges.append(obj_dict)
-    return JsonResponse({"list_messges":list_messges})
+    return JsonResponse({"messages":list_messges})
+
+@api_view(['PUT'])
+@permission_classes([AllowAny])
+def update_message(request, pk):
+    try:
+        chatbot = Chatbot.objects.get(pk=pk)
+    except Chatbot.DoesNotExist:
+        return JsonResponse({"error": "Not found"}, status=404)
+    question = request.data.get("question", "").strip().lower()
+    answer=generate_response(question)
+    chatbot.question=question
+    chatbot.answer=answer
+    chatbot.save()
+    return JsonResponse({
+        "question": question,
+        "answer": answer,
+    })
+
+@api_view(['DELETE'])
+@permission_classes([AllowAny])
+def delete_message(request, pk):
+    Chatbot.objects.filter(pk=pk).delete()
+    return JsonResponse({"status": "deleted"})

@@ -2,7 +2,7 @@ version: "3.3"
 services:
  
   db:
-      image: "postgres:15"
+      image: "postgres:latest"
       container_name: app-db-container
       environment:
         - POSTGRES_DB=postgres
@@ -14,7 +14,6 @@ services:
       volumes:
         - pgdb:/var/lib/postgresql/data
         - ./list_tables:/list_tables
-
 volumes:
   pgdb:
 

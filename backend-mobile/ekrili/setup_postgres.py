@@ -61,16 +61,17 @@ def execute_sql_files():
 
 
 # Step 4: Django migrations
-def run_django_migrations():
-    print("Running Django migrations...")
-    run_command("python3 manage.py migrate")
+# def run_django_migrations():
+#     print("Running Django migrations...")
+#     run_command("python3 manage.py migrate")
+#     run_command("python3 manage.py migrate")
 
 
 def main():
     # create_postgres_user()
     # create_database()
     execute_sql_files()
-    run_django_migrations()
+    # run_django_migrations()
 
 
 if __name__ == "__main__":
