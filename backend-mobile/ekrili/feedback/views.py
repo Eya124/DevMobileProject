@@ -24,6 +24,12 @@ def getAllFeedback(request):
         feedbacks_dict = serializers.serialize("json", feedbacks)
         res = json.loads(feedbacks_dict)
         list_feedbacks=[]
+        for item in res:
+            fields = item['fields']
+            user_id = fields.get('user_id')
+            user = User.objects.filter(id=user_id).first()
+            fields['first_name'] = user.first_name if user else None
+            fields['last_name'] = user.last_name if user else None
         list_feedbacks=parse_information(res,list_feedbacks)
     return JsonResponse({"Feedback": list_feedbacks})
 @swagger_auto_schema(
