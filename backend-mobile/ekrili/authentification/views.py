@@ -23,6 +23,9 @@ from django.shortcuts import get_object_or_404
 from django.utils import translation
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from rest_framework.response import Response
+from rest_framework import status
+
 User=get_user_model()
 
 @swagger_auto_schema(
@@ -37,8 +40,8 @@ User=get_user_model()
                     "token": "JWT_TOKEN_HERE",
                     "CurrentUser": {
                         "id": 1,
-                        "username": "Ameni",
-                        "email": "ameni@example.com",
+                        "username": "eya",
+                        "email": "eya@example.com",
                         "is_verified": True,
                         "is_admin": False
                     }
@@ -51,6 +54,33 @@ User=get_user_model()
         )
     }
 )
+@api_view(['POST'])
+@permission_classes([AllowAny])  # ou IsAdminUser si tu veux sécuriser
+def admin_create_user(request):
+    data = json.loads(request.body)
+    is_admin = data.get('is_admin', False)
+
+    data['password'] = make_password(data['password'])
+    user = User.objects.create(
+        first_name=data.get('first_name', ''),
+        last_name=data.get('last_name', ''),
+        email=data['email'],
+        password=data['password'],
+        is_admin=is_admin,
+        is_verified=True,   # ✅ AUTO VERIFIED
+        is_active=True
+    )
+
+    return JsonResponse({
+        "message": "Utilisateur créé par admin",
+        "CurrentUser": {
+            "id": user.id,
+            "email": user.email,
+            "is_verified": user.is_verified,
+            "is_admin": user.is_admin
+        }
+    }, status=200)
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def authentification(request):
