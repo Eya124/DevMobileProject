@@ -8,7 +8,7 @@ class AuthService {
     // For Android emulator, use 10.0.2.2 to access host machine
     // For physical device, use the actual IP address of your computer
     // You may need to change this to your computer's actual IP address
-    return 'http://172.24.162.10:8111'; // For physical device (your computer's IP)
+    return 'http://192.168.184.68:8111'; // For physical device (your computer's IP)
     // return 'http://10.0.2.2:8111'; // For emulator
   }
 
@@ -30,20 +30,27 @@ class AuthService {
 
   /// Sign in with email and password.
   static Future<http.Response> signIn({
-    required String email,
-    required String password,
-  }) async {
-    final url = Uri.parse('$baseUrl/authentification/signin');
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        "email": email,
-        "password": password,
-      }),
-    );
-    return response;
-  }
+  required String email,
+  required String password,
+    }) {
+      final url = Uri.parse('$baseUrl/authentification/signin');
+
+      final payload = jsonEncode({
+        "email": email.trim(),
+        "password": password.trim(),
+      });
+
+      print('SIGNIN PAYLOAD => $payload');
+
+      return http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: payload,
+      );
+    }
 
   /// Verifies the OTP code for the user with a dynamic userId.
   static Future<http.Response> verifyOtp({
