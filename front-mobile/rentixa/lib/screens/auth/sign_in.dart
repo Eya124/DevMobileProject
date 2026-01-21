@@ -1,10 +1,16 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 import '../../widgets/header.dart';
 import 'package:rentixa/services/auth_service.dart';
 import 'package:rentixa/providers/auth_provider.dart';
+
+// ✅ AJOUTS POUR LA REDIRECTION
+import '../../admin/admin_panel.dart';
+import '../auth/profile.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({Key? key}) : super(key: key);
@@ -110,9 +116,7 @@ class _SignInPageState extends State<SignInPage> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {
-                        // TODO: forgot password
-                      },
+                      onPressed: () {},
                       child: const Text(
                         'Mot de passe oublié ?',
                         style: TextStyle(color: Colors.black87),
@@ -154,40 +158,6 @@ class _SignInPageState extends State<SignInPage> {
                   ),
 
                   const SizedBox(height: 14),
-
-                  /// GOOGLE BUTTON
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: OutlinedButton(
-                      onPressed: () {},
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: primaryOrange),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.asset(
-                            'assets/google_logo.png',
-                            width: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Se connecter avec Google',
-                            style: TextStyle(
-                              color: Colors.deepPurple,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
 
                   /// SIGN UP
                   Row(
@@ -317,7 +287,7 @@ class _SignInPageState extends State<SignInPage> {
     );
   }
 
-  /// SIGN IN LOGIC (INCHANGÉE)
+  /// ✅ SIGN IN LOGIC AVEC REDIRECTION ADMIN / USER
   Future<void> _handleSignIn() async {
     setState(() {
       isLoading = true;
@@ -332,6 +302,13 @@ class _SignInPageState extends State<SignInPage> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        final token = data['token'];
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', token);
+
+        print('✅ TOKEN SAUVEGARDÉ => $token');
+
         final currentUser = data['CurrentUser'] ?? {};
 
         final userId = currentUser['id'];
@@ -339,11 +316,29 @@ class _SignInPageState extends State<SignInPage> {
             currentUser['first_name'] ?? currentUser['username'] ?? '';
         final lastName = currentUser['last_name'] ?? '';
         final email = currentUser['email'] ?? '';
+        final bool isAdmin = currentUser['is_admin'] == true;
 
         if (userId != null) {
           Provider.of<AuthProvider>(context, listen: false)
               .setUserData(userId.toString(), firstName, lastName, email);
-          Navigator.pushReplacementNamed(context, '/all-ads');
+
+          if (isAdmin) {
+            // 👉 ADMIN
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const AdminPanel(),
+              ),
+            );
+          } else {
+            // 👉 USER NORMAL
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const ProfilePage(),
+              ),
+            );
+          }
         } else {
           errorMessage = 'Impossible de récupérer l’utilisateur';
         }

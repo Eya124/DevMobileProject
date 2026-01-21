@@ -7,6 +7,8 @@ import 'package:rentixa/screens/auth/sign_in.dart';
 import 'package:rentixa/screens/auth/verify_otp.dart';
 import 'package:rentixa/screens/chatbot/chat_discussion.dart';
 import 'package:rentixa/screens/auth/profile.dart';
+import 'package:rentixa/screens/auth/users_page.dart';
+import 'package:rentixa/admin/admin_panel.dart';
 
 
 void main() {
@@ -37,6 +39,8 @@ class MyApp extends StatelessWidget {
         '/sign-in': (context) => SignInPage(),
         '/verify-otp': (context) => VerifyOtpPage(),
         '/profile': (context) => const ProfilePage(),
+        '/users': (context) => const UsersPage(),
+
       },
     );
   }
