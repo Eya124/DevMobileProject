@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rentixa/providers/auth_provider.dart';
+import 'package:rentixa/screens/complaint/Add_complaint.dart';
+import 'package:rentixa/screens/complaint/complaint_list.dart';
 import 'package:rentixa/widgets/header.dart';
 import 'package:rentixa/screens/auth/sign_up.dart';
 import 'package:rentixa/screens/auth/sign_in.dart';
 import 'package:rentixa/screens/auth/verify_otp.dart';
 import 'package:rentixa/screens/chatbot/chat_discussion.dart';
 import 'package:rentixa/screens/auth/profile.dart';
-
 
 void main() {
   runApp(
@@ -37,6 +38,8 @@ class MyApp extends StatelessWidget {
         '/sign-in': (context) => SignInPage(),
         '/verify-otp': (context) => VerifyOtpPage(),
         '/profile': (context) => const ProfilePage(),
+        '/complaints': (context) => ComplaintListPage(),
+        '/complaints/add': (context) => AddComplaintPage(),
       },
     );
   }
@@ -112,8 +115,9 @@ class _HomeWithFilterState extends State<HomeWithFilter> {
                   context: context,
                   isScrollControlled: true,
                   shape: const RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(16)),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(16),
+                    ),
                   ),
                   builder: (_) => ChatDiscussionModal(),
                 );
@@ -156,7 +160,9 @@ class _HomeWithFilterState extends State<HomeWithFilter> {
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Colors.black87),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 4, vertical: 8),
+                        horizontal: 4,
+                        vertical: 8,
+                      ),
                     ),
                     child: const Text(
                       'CRÉER UNE ANNONCE',
@@ -184,15 +190,11 @@ class _HomeWithFilterState extends State<HomeWithFilter> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: const [
-                  Icon(Icons.construction,
-                      size: 64, color: Colors.grey),
+                  Icon(Icons.construction, size: 64, color: Colors.grey),
                   SizedBox(height: 16),
                   Text(
                     'Module annonces temporairement désactivé',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
                   ),
                 ],
               ),
