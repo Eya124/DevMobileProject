@@ -17,6 +17,7 @@ from django.conf import settings
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from authentification.authentication import JWTAuthentication
+from django.views.decorators.csrf import csrf_exempt
 
 # Create your views here.
 
@@ -83,8 +84,8 @@ def update_users(request, id):
         return JsonResponse({"errors":serializer.errors}, status=400)
 
 @api_view(['DELETE'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
+@csrf_exempt
 def delete_users(request,id):
     """Delete a user"""
     user = User.objects.get(id=id)
