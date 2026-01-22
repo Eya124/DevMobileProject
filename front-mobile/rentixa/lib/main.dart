@@ -22,10 +22,16 @@ import 'package:rentixa/screens/complaint/Add_complaint.dart';
 import 'package:rentixa/screens/complaint/complaint_list.dart';
 import 'package:rentixa/screens/chatbot/chat_discussion.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final authProvider = AuthProvider();
+  await authProvider.restoreSession(); // ✅ RESTAURATION SESSION
+
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: authProvider),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => SearchProvider()),
       ],
@@ -33,6 +39,7 @@ void main() {
     ),
   );
 }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -54,6 +61,7 @@ class MyApp extends StatelessWidget {
         '/verify-otp': (context) => VerifyOtpPage(),
         '/profile': (context) => const ProfilePage(),
         '/users': (context) => const UsersPage(),
+        '/admin': (context) => const AdminPanel(),
         '/complaints': (context) => ComplaintListPage(),
         '/complaints/add': (context) => AddComplaintPage(),
       },
@@ -152,7 +160,7 @@ class _HomeWithFilterState extends State<HomeWithFilter> {
           isAdmin: false,
           username: authProvider.userInitials,
           onSignIn: () {
-            Navigator.pushNamed(context, '/sign-in');
+            Navigator.pushNamed(context, '/home');
           },
           onAddAd: _navigateToCreateAd, 
           leading: isUserLoggedIn 

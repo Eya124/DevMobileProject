@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rentixa/providers/auth_provider.dart';
 import '../../widgets/header.dart';
+import 'change_password_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -149,8 +150,16 @@ class ProfilePage extends StatelessWidget {
                 _actionButton(
                   icon: Icons.lock_outline,
                   label: 'Changer le mot de passe',
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ChangePasswordPage(),
+                      ),
+                    );
+                  },
                 ),
+
                 _actionButton(
                   icon: Icons.logout,
                   label: 'Se déconnecter',
