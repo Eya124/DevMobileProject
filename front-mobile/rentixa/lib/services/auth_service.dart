@@ -20,10 +20,7 @@ class AuthService {
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        ...user.toJson(),
-        "password": password,
-      }),
+      body: jsonEncode({...user.toJson(), "password": password}),
     );
     return response;
   }
@@ -32,17 +29,24 @@ class AuthService {
   static Future<http.Response> signIn({
     required String email,
     required String password,
-  }) async {
+  }) {
     final url = Uri.parse('$baseUrl/authentification/signin');
-    final response = await http.post(
+
+    final payload = jsonEncode({
+      "email": email.trim(),
+      "password": password.trim(),
+    });
+
+    print('SIGNIN PAYLOAD => $payload');
+
+    return http.post(
       url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        "email": email,
-        "password": password,
-      }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: payload,
     );
-    return response;
   }
 
   /// Verifies the OTP code for the user with a dynamic userId.
@@ -54,9 +58,7 @@ class AuthService {
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        "verification_code": code,
-      }),
+      body: jsonEncode({"verification_code": code}),
     );
     return response;
   }
@@ -65,7 +67,9 @@ class AuthService {
   static Future<http.Response> resendVerificationCode({
     required String userId,
   }) async {
-    final url = Uri.parse('$baseUrl/authentification/resend_verification_code/$userId');
+    final url = Uri.parse(
+      '$baseUrl/authentification/resend_verification_code/$userId',
+    );
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},

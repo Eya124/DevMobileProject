@@ -12,12 +12,14 @@ import 'package:rentixa/models/ads.dart';
 // --- Widgets & Pages ---
 import 'package:rentixa/widgets/header.dart';
 import 'package:rentixa/widgets/ad_details_modal.dart';
-// If this line still errors, check if the file is in lib/screens/ instead!
 import 'package:rentixa/screens/ads/create_ad_modal.dart'; 
 import 'package:rentixa/screens/auth/sign_up.dart';
 import 'package:rentixa/screens/auth/sign_in.dart';
 import 'package:rentixa/screens/auth/verify_otp.dart';
 import 'package:rentixa/screens/auth/profile.dart';
+import 'package:rentixa/screens/auth/users_page.dart';
+import 'package:rentixa/screens/complaint/Add_complaint.dart';
+import 'package:rentixa/screens/complaint/complaint_list.dart';
 import 'package:rentixa/screens/chatbot/chat_discussion.dart';
 
 void main() {
@@ -51,6 +53,9 @@ class MyApp extends StatelessWidget {
         '/sign-in': (context) => SignInPage(),
         '/verify-otp': (context) => VerifyOtpPage(),
         '/profile': (context) => const ProfilePage(),
+        '/users': (context) => const UsersPage(),
+        '/complaints': (context) => ComplaintListPage(),
+        '/complaints/add': (context) => AddComplaintPage(),
       },
     );
   }
@@ -106,7 +111,6 @@ class _HomeWithFilterState extends State<HomeWithFilter> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        // Ensure this class name matches exactly what is inside create_ad_modal.dart
         return CreateAdModal(); 
       },
     );
@@ -150,7 +154,7 @@ class _HomeWithFilterState extends State<HomeWithFilter> {
           onSignIn: () {
             Navigator.pushNamed(context, '/sign-in');
           },
-          onAddAd: _navigateToCreateAd, // Connects the Header button
+          onAddAd: _navigateToCreateAd, 
           leading: isUserLoggedIn 
             ? IconButton(
                 icon: const Icon(Icons.add_box_outlined, color: Colors.orange),
@@ -181,6 +185,7 @@ class _HomeWithFilterState extends State<HomeWithFilter> {
             const Icon(Icons.error_outline, size: 48, color: Colors.red),
             const SizedBox(height: 16),
             Text(errorMessage!),
+            const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _loadAds,
               child: const Text("Réessayer"),

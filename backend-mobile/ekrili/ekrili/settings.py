@@ -122,13 +122,13 @@ AUTH_USER_MODEL = 'users.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
+        'authentification.authentication.JWTAuthentication',
     ),
-    'DEFAULT_PERMISSION_CLASSES': [
+    'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-    ],
+    ),
 }
+
 
 JWT_CONF = {
     'TOKEN_LIFETIME_HOURS': 1,
@@ -239,8 +239,8 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
-EMAIL_HOST_USER = 'amani.bouhrira@gmail.com' 
-EMAIL_HOST_PASSWORD = 'sqty dcso ufwt fywx'
+EMAIL_HOST_USER = 'bestcamp195@gmail.com' 
+EMAIL_HOST_PASSWORD = 'mocwgjfyahjswknf'
 DEFAULT_FROM_EMAIL = 'amani.bouhrira@gmail.com' 
 
 
