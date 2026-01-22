@@ -9,7 +9,7 @@ class AuthService {
     // For Android emulator, use 10.0.2.2 to access host machine
     // For physical device, use the actual IP address of your computer
     // You may need to change this to your computer's actual IP address
-    return 'http://192.168.184.68:8111'; // For physical device (your computer's IP)
+    return 'http://localhost:8111'; // For physical device (your computer's IP)
     // return 'http://10.0.2.2:8111'; // For emulator
   }
 
@@ -21,37 +21,34 @@ class AuthService {
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        ...user.toJson(),
-        "password": password,
-      }),
+      body: jsonEncode({...user.toJson(), "password": password}),
     );
     return response;
   }
 
   /// Sign in with email and password.
   static Future<http.Response> signIn({
-  required String email,
-  required String password,
-    }) {
-      final url = Uri.parse('$baseUrl/authentification/signin');
+    required String email,
+    required String password,
+  }) {
+    final url = Uri.parse('$baseUrl/authentification/signin');
 
-      final payload = jsonEncode({
-        "email": email.trim(),
-        "password": password.trim(),
-      });
+    final payload = jsonEncode({
+      "email": email.trim(),
+      "password": password.trim(),
+    });
 
-      print('SIGNIN PAYLOAD => $payload');
+    print('SIGNIN PAYLOAD => $payload');
 
-      return http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: payload,
-      );
-    }
+    return http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: payload,
+    );
+  }
 
   /// Verifies the OTP code for the user with a dynamic userId.
   static Future<http.Response> verifyOtp({
@@ -62,9 +59,7 @@ class AuthService {
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        "verification_code": code,
-      }),
+      body: jsonEncode({"verification_code": code}),
     );
     return response;
   }
@@ -73,7 +68,9 @@ class AuthService {
   static Future<http.Response> resendVerificationCode({
     required String userId,
   }) async {
-    final url = Uri.parse('$baseUrl/authentification/resend_verification_code/$userId');
+    final url = Uri.parse(
+      '$baseUrl/authentification/resend_verification_code/$userId',
+    );
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -111,4 +108,5 @@ class AuthService {
   );
 }
 
+}
 }

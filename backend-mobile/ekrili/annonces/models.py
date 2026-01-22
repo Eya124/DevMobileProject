@@ -35,7 +35,7 @@ class Annonce(models.Model):
     size = models.CharField(max_length=100)
     price = models.IntegerField()
     state = models.ForeignKey(State, on_delete=models.CASCADE)
-    delegation = models.ForeignKey(Delegation, on_delete=models.CASCADE, null=True,blank=True)
+    delegation = models.ForeignKey(Delegation, on_delete=models.CASCADE, null=True, blank=True)
     jurisdiction = models.ForeignKey(Jurisdiction , on_delete=models.CASCADE, null=True,blank=True)
     status = models.BooleanField(default=True)
     type = models.ForeignKey(Type, on_delete=models.CASCADE)
