@@ -45,6 +45,7 @@ class MyApp extends StatelessWidget {
         '/verify-otp': (context) => VerifyOtpPage(),
         '/profile': (context) => const ProfilePage(),
         '/users': (context) => const UsersPage(),
+        '/admin': (context) => const AdminPanel(),
       
       },
     );
