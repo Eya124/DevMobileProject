@@ -19,7 +19,44 @@ from rest_framework.decorators import api_view, permission_classes, authenticati
 from authentification.authentication import JWTAuthentication
 from django.views.decorators.csrf import csrf_exempt
 
+
 # Create your views here.
+from django.contrib.auth import authenticate
+
+@api_view(['POST'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def change_password_authenticated(request):
+    """
+    Change password for authenticated user
+    """
+    user = request.user
+    data = json.loads(request.body)
+
+    old_password = data.get('old_password')
+    new_password = data.get('new_password')
+
+    if not old_password or not new_password:
+        return JsonResponse(
+            {"message": "Ancien et nouveau mot de passe requis"},
+            status=400
+        )
+
+    # ✅ Vérifier ancien mot de passe
+    if not user.check_password(old_password):
+        return JsonResponse(
+            {"message": "Ancien mot de passe incorrect"},
+            status=400
+        )
+
+    # ✅ Mettre à jour
+    user.password = make_password(new_password)
+    user.save()
+
+    return JsonResponse(
+        {"message": "Mot de passe mis à jour avec succès"},
+        status=200
+    )
 
 @api_view(['POST'])
 @authentication_classes([JWTAuthentication])
