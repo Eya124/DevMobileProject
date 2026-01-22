@@ -289,66 +289,75 @@ class _SignInPageState extends State<SignInPage> {
 
   /// ✅ SIGN IN LOGIC AVEC REDIRECTION ADMIN / USER
   Future<void> _handleSignIn() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-    });
+  setState(() {
+    isLoading = true;
+    errorMessage = null;
+  });
 
-    try {
-      final response = await AuthService.signIn(
-        email: emailController.text,
-        password: passwordController.text,
-      );
+  try {
+    final response = await AuthService.signIn(
+      email: emailController.text,
+      password: passwordController.text,
+    );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final token = data['token'];
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', token);
+      final token = data['token'];
+      final currentUser = data['CurrentUser'] ?? {};
 
-        print('✅ TOKEN SAUVEGARDÉ => $token');
+      final userId = currentUser['id'];
+      final firstName =
+          currentUser['first_name'] ?? currentUser['username'] ?? '';
+      final lastName = currentUser['last_name'] ?? '';
+      final email = currentUser['email'] ?? '';
+      final bool isAdmin = currentUser['is_admin'] == true;
 
-        final currentUser = data['CurrentUser'] ?? {};
-
-        final userId = currentUser['id'];
-        final firstName =
-            currentUser['first_name'] ?? currentUser['username'] ?? '';
-        final lastName = currentUser['last_name'] ?? '';
-        final email = currentUser['email'] ?? '';
-        final bool isAdmin = currentUser['is_admin'] == true;
-
-        if (userId != null) {
-          Provider.of<AuthProvider>(context, listen: false)
-              .setUserData(userId.toString(), firstName, lastName, email);
-
-          if (isAdmin) {
-            // 👉 ADMIN
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const AdminPanel(),
-              ),
-            );
-          } else {
-            // 👉 USER NORMAL
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const ProfilePage(),
-              ),
-            );
-          }
-        } else {
-          errorMessage = 'Impossible de récupérer l’utilisateur';
-        }
-      } else {
-        errorMessage = 'Email ou mot de passe incorrect';
+      if (userId == null || token == null) {
+        setState(() {
+          errorMessage = 'Données utilisateur invalides';
+        });
+        return;
       }
-    } catch (e) {
-      errorMessage = 'Erreur réseau';
-    } finally {
-      setState(() => isLoading = false);
+
+      /// ✅ SAUVEGARDE CORRECTE
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', token);
+      await prefs.setString('userId', userId.toString());
+      await prefs.setString('firstName', firstName);
+      await prefs.setString('lastName', lastName);
+      await prefs.setString('email', email);
+
+      print('✅ SESSION SAUVEGARDÉE : $email');
+
+      /// ✅ PROVIDER
+      Provider.of<AuthProvider>(context, listen: false)
+          .setUserData(userId.toString(), firstName, lastName, email);
+
+      /// ✅ REDIRECTION
+      if (isAdmin) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminPanel()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ProfilePage()),
+        );
+      }
+    } else {
+      setState(() {
+        errorMessage = 'Email ou mot de passe incorrect';
+      });
     }
+  } catch (e) {
+    setState(() {
+      errorMessage = 'Erreur réseau';
+    });
+  } finally {
+    setState(() => isLoading = false);
   }
+}
+
 }

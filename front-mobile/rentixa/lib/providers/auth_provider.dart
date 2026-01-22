@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthProvider with ChangeNotifier {
   String? userId;
@@ -38,4 +39,19 @@ class AuthProvider with ChangeNotifier {
     email = null;
     notifyListeners();
   }
+  Future<void> restoreSession() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  final token = prefs.getString('token');
+  if (token == null) return;
+
+  userId = prefs.getString('userId');
+  firstName = prefs.getString('firstName');
+  lastName = prefs.getString('lastName');
+  email = prefs.getString('email');
+
+  notifyListeners();
+}
+
 } 
+

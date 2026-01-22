@@ -242,6 +242,7 @@ class _AdminPanelState extends State<AdminPanel> {
             icon: const Icon(Icons.refresh),
             onPressed: loadUsers,
           ),
+
         ],
       ),
       body: loading

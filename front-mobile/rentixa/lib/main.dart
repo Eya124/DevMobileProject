@@ -11,17 +11,22 @@ import 'package:rentixa/screens/auth/users_page.dart';
 import 'package:rentixa/admin/admin_panel.dart';
 
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final authProvider = AuthProvider();
+  await authProvider.restoreSession(); // ✅ RESTAURATION SESSION
+
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        // ChangeNotifierProvider(create: (_) => SearchProvider()), // TEMP REMOVED
+        ChangeNotifierProvider.value(value: authProvider),
       ],
       child: MyApp(),
     ),
   );
 }
+
 
 class MyApp extends StatelessWidget {
   @override
@@ -40,7 +45,7 @@ class MyApp extends StatelessWidget {
         '/verify-otp': (context) => VerifyOtpPage(),
         '/profile': (context) => const ProfilePage(),
         '/users': (context) => const UsersPage(),
-
+      
       },
     );
   }
@@ -134,7 +139,7 @@ class _HomeWithFilterState extends State<HomeWithFilter> {
           username: authProvider.userInitials,
           leading: null,
           onSignIn: () {
-            Navigator.pushNamed(context, '/sign-in');
+            Navigator.pushNamed(context, '/home');
           },
         ),
       ),
