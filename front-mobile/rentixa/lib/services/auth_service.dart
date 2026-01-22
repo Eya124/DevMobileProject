@@ -8,7 +8,7 @@ class AuthService {
     // For Android emulator, use 10.0.2.2 to access host machine
     // For physical device, use the actual IP address of your computer
     // You may need to change this to your computer's actual IP address
-    return 'http://172.24.162.10:8111'; // For physical device (your computer's IP)
+    return 'http://localhost:8111'; // For physical device (your computer's IP)
     // return 'http://10.0.2.2:8111'; // For emulator
   }
 
