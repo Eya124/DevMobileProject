@@ -241,7 +241,7 @@ EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 EMAIL_HOST_USER = 'bestcamp195@gmail.com' 
 EMAIL_HOST_PASSWORD = 'mocwgjfyahjswknf'
-DEFAULT_FROM_EMAIL = 'amani.bouhrira@gmail.com' 
+DEFAULT_FROM_EMAIL = 'bestcamp195@gmail.com' 
 
 
 CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Redis as the broker
