@@ -13,7 +13,7 @@ class UsersPage extends StatelessWidget {
 
   /// 🔥 Appel réel à TON backend
   Future<List<dynamic>> fetchUsers() async {
-    final uri = Uri.parse('http://192.168.184.68:8111/users/all');
+    final uri = Uri.parse('http://10.0.2.2:8111/users/all');
 
     final response = await http.get(uri);
 
