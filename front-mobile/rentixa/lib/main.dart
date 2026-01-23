@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rentixa/admin/admin_panel.dart';
- 
 // --- Providers ---
 import 'package:rentixa/providers/auth_provider.dart';
 import 'package:rentixa/providers/search_provider.dart';
@@ -170,7 +169,7 @@ class _HomeWithFilterState extends State<HomeWithFilter> {
         isAdmin: false,
         username: authProvider.userInitials,
         onSignIn: () {
-          Navigator.pushNamed(context, '/home');
+          Navigator.pushNamed(context, '/sign-in');
         },
         onAddAd: _navigateToCreateAd,
         leading: isUserLoggedIn

@@ -2,9 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/user.dart';
+import 'package:rentixa/widgets/header.dart';
+import 'package:rentixa/providers/auth_provider.dart';
 
 class AdminPanel extends StatefulWidget {
   const AdminPanel({Key? key}) : super(key: key);
@@ -16,6 +19,9 @@ class AdminPanel extends StatefulWidget {
 class _AdminPanelState extends State<AdminPanel> {
   List<User> users = [];
   bool loading = true;
+
+  /// 🔥 MAP ADMIN (sans toucher User.dart)
+  final Map<int, bool> adminMap = {};
 
   final String baseUrl = 'http://192.168.184.68:8111';
 
@@ -51,9 +57,14 @@ class _AdminPanelState extends State<AdminPanel> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      users = (data['users'] as List)
-          .map((e) => User.fromJson(e))
-          .toList();
+      final rawUsers = data['users'] as List;
+
+      users = rawUsers.map((e) => User.fromJson(e)).toList();
+
+      adminMap.clear();
+      for (final u in rawUsers) {
+        adminMap[u['id']] = u['is_admin'] == true;
+      }
     }
 
     setState(() => loading = false);
@@ -75,7 +86,7 @@ class _AdminPanelState extends State<AdminPanel> {
     loadUsers();
   }
 
-  // ➕ CREATE USER (ADMIN / USER)
+  // ➕ CREATE USER
   Future<void> createUser({
     required String firstName,
     required String lastName,
@@ -83,11 +94,9 @@ class _AdminPanelState extends State<AdminPanel> {
     required String password,
     required bool isAdmin,
   }) async {
-    final response = await http.post(
+    await http.post(
       Uri.parse('$baseUrl/authentification/admin-create-user'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'first_name': firstName,
         'last_name': lastName,
@@ -97,11 +106,7 @@ class _AdminPanelState extends State<AdminPanel> {
       }),
     );
 
-    if (response.statusCode == 200) {
-      loadUsers();
-    } else {
-      throw Exception('Erreur création utilisateur');
-    }
+    loadUsers();
   }
 
   // 🪟 CREATE USER DIALOG
@@ -110,9 +115,7 @@ class _AdminPanelState extends State<AdminPanel> {
     final lastNameCtrl = TextEditingController();
     final emailCtrl = TextEditingController();
     final passwordCtrl = TextEditingController();
-
     bool isAdmin = false;
-    bool submitting = false;
 
     showDialog(
       context: context,
@@ -124,36 +127,26 @@ class _AdminPanelState extends State<AdminPanel> {
               children: [
                 TextField(
                   controller: firstNameCtrl,
-                  decoration:
-                      const InputDecoration(labelText: 'Prénom'),
+                  decoration: const InputDecoration(labelText: 'Prénom'),
                 ),
                 TextField(
                   controller: lastNameCtrl,
-                  decoration:
-                      const InputDecoration(labelText: 'Nom'),
+                  decoration: const InputDecoration(labelText: 'Nom'),
                 ),
                 TextField(
                   controller: emailCtrl,
-                  decoration:
-                      const InputDecoration(labelText: 'Email'),
+                  decoration: const InputDecoration(labelText: 'Email'),
                 ),
                 TextField(
                   controller: passwordCtrl,
-                  decoration:
-                      const InputDecoration(labelText: 'Mot de passe'),
+                  decoration: const InputDecoration(labelText: 'Mot de passe'),
                   obscureText: true,
                 ),
                 const SizedBox(height: 12),
-
-                /// ✅ ADMIN SWITCH
                 SwitchListTile(
                   title: const Text('Administrateur'),
-                  subtitle: const Text(
-                      'Donner les droits administrateur'),
                   value: isAdmin,
-                  onChanged: (value) {
-                    setStateDialog(() => isAdmin = value);
-                  },
+                  onChanged: (v) => setStateDialog(() => isAdmin = v),
                 ),
               ],
             ),
@@ -164,30 +157,17 @@ class _AdminPanelState extends State<AdminPanel> {
               child: const Text('Annuler'),
             ),
             ElevatedButton(
-              onPressed: submitting
-                  ? null
-                  : () async {
-                      setStateDialog(() => submitting = true);
-                      try {
-                        await createUser(
-                          firstName: firstNameCtrl.text,
-                          lastName: lastNameCtrl.text,
-                          email: emailCtrl.text,
-                          password: passwordCtrl.text,
-                          isAdmin: isAdmin,
-                        );
-                        Navigator.pop(context);
-                      } catch (_) {
-                        setStateDialog(() => submitting = false);
-                      }
-                    },
-              child: submitting
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Créer'),
+              onPressed: () async {
+                await createUser(
+                  firstName: firstNameCtrl.text,
+                  lastName: lastNameCtrl.text,
+                  email: emailCtrl.text,
+                  password: passwordCtrl.text,
+                  isAdmin: isAdmin,
+                );
+                Navigator.pop(context);
+              },
+              child: const Text('Créer'),
             ),
           ],
         ),
@@ -195,56 +175,29 @@ class _AdminPanelState extends State<AdminPanel> {
     );
   }
 
-  // 👁️ USER PROFILE
-  void showProfile(User user) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Profil utilisateur'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Nom : ${user.firstName} ${user.lastName}'),
-            const SizedBox(height: 8),
-            Text('Email : ${user.email}'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fermer'),
-          )
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final double cardWidth =
+        MediaQuery.of(context).size.width < 600 ? double.infinity : 260;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FB),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        foregroundColor: Colors.black,
-        title: const Text(
-          'Admin Dashboard',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Ajouter un utilisateur',
-            icon: const Icon(Icons.person_add),
-            onPressed: showCreateUserDialog,
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: loadUsers,
-          ),
 
-        ],
+      /// ✅ HEADER GLOBAL
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(70),
+        child: Consumer<AuthProvider>(
+          builder: (context, authProvider, _) {
+            return Header(
+              isConnected: true,
+              isVerified: true,
+              isAdmin: true,
+              username: authProvider.userInitials,
+            );
+          },
+        ),
       ),
+
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
@@ -252,67 +205,76 @@ class _AdminPanelState extends State<AdminPanel> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  /// 📊 STATS
+                  /// ACTIONS
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        tooltip: 'Ajouter un utilisateur',
+                        icon: const Icon(Icons.person_add),
+                        onPressed: showCreateUserDialog,
+                      ),
+                      IconButton(
+                        tooltip: 'Rafraîchir',
+                        icon: const Icon(Icons.refresh),
+                        onPressed: loadUsers,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  /// 📊 STATS
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
                     children: [
                       _statCard(
+                        width: cardWidth,
                         title: 'Utilisateurs',
                         value: users.length.toString(),
                         icon: Icons.people,
                         color: Colors.blue,
                       ),
-                      const SizedBox(width: 16),
                       _statCard(
+                        width: cardWidth,
                         title: 'Admins',
-                        value: users.where((u) => u.email
-                            .toLowerCase()
-                            .contains('admin')).length.toString(),
+                        value: adminMap.values
+                            .where((v) => v)
+                            .length
+                            .toString(),
                         icon: Icons.admin_panel_settings,
                         color: Colors.deepPurple,
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 24),
 
                   const Text(
                     'Liste des utilisateurs',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 12),
 
-                  /// 👥 USERS LIST
                   Expanded(
                     child: ListView.separated(
                       itemCount: users.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: 12),
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (_, i) {
                         final user = users[i];
-                        final isAdmin =
-                            user.email.toLowerCase().contains('admin');
+                        final isAdmin = adminMap[user.id] == true;
 
                         return Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
                           ),
                           child: Row(
                             children: [
                               CircleAvatar(
-                                radius: 24,
                                 backgroundColor: isAdmin
                                     ? Colors.deepPurple
                                     : Colors.blueGrey,
@@ -320,41 +282,28 @@ class _AdminPanelState extends State<AdminPanel> {
                                   user.firstName.isNotEmpty
                                       ? user.firstName[0].toUpperCase()
                                       : '?',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  style:
+                                      const TextStyle(color: Colors.white),
                                 ),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       '${user.firstName} ${user.lastName}',
                                       style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                          fontWeight: FontWeight.w600),
                                     ),
-                                    Text(
-                                      user.email,
-                                      style: TextStyle(
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
+                                    Text(user.email),
                                   ],
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () =>
-                                    deleteUser(user.id!),
+                                icon: const Icon(Icons.delete,
+                                    color: Colors.red),
+                                onPressed: () => deleteUser(user.id!),
                               ),
                             ],
                           ),
@@ -370,24 +319,19 @@ class _AdminPanelState extends State<AdminPanel> {
 
   /// 📦 STAT CARD
   Widget _statCard({
+    required double width,
     required String title,
     required String value,
     required IconData icon,
     required Color color,
   }) {
-    return Expanded(
+    return SizedBox(
+      width: width,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 6),
-            ),
-          ],
         ),
         child: Row(
           children: [
@@ -399,20 +343,16 @@ class _AdminPanelState extends State<AdminPanel> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: TextStyle(color: Colors.grey.shade600),
-                ),
+                Text(title,
+                    style: TextStyle(color: Colors.grey.shade600)),
                 const SizedBox(height: 4),
                 Text(
                   value,
                   style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                      fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),
