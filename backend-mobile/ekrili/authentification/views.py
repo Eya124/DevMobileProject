@@ -57,29 +57,42 @@ User=get_user_model()
 @api_view(['POST'])
 @permission_classes([AllowAny])  # ou IsAdminUser si tu veux sécuriser
 def admin_create_user(request):
+    print("==== ADMIN CREATE USER DEBUG ====")
+    print("RAW BODY:", request.body)
+
     data = json.loads(request.body)
-    is_admin = data.get('is_admin', False)
+    print("PARSED DATA:", data)
+
+    raw_is_admin = data.get('is_admin', 'NOT_FOUND')
+    print("RAW is_admin:", raw_is_admin, type(raw_is_admin))
+
+    is_admin = True if raw_is_admin in [True, 'true', 'True', 1, '1'] else False
+    print("FINAL is_admin:", is_admin)
 
     data['password'] = make_password(data['password'])
+
     user = User.objects.create(
         first_name=data.get('first_name', ''),
         last_name=data.get('last_name', ''),
         email=data['email'],
         password=data['password'],
         is_admin=is_admin,
-        is_verified=True,   # ✅ AUTO VERIFIED
+        is_verified=True,
         is_active=True
     )
+
+    print("USER SAVED is_admin:", user.is_admin)
+    print("=================================")
 
     return JsonResponse({
         "message": "Utilisateur créé par admin",
         "CurrentUser": {
             "id": user.id,
             "email": user.email,
-            "is_verified": user.is_verified,
             "is_admin": user.is_admin
         }
     }, status=200)
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
