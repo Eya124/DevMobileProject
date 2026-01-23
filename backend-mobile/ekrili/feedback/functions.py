@@ -12,6 +12,7 @@ headers = {
 "Content-Type" : "application/json"
 }
 
+# custimaization of information to use get
 def parse_information(res,list_feedbacks):
     # print(res)
 
@@ -25,6 +26,8 @@ def parse_information(res,list_feedbacks):
         list_feedbacks.append(res[i]['fields'])
         
     return list_feedbacks
+
+# recuperation of all feedback
 def get_all_feedback(page_number, property, direction):
     feedback_list = Feedback.objects.select_related("annonce").all()
 
