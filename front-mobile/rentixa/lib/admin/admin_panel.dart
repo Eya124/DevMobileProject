@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:rentixa/screens/complaint/complaint_list.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/user.dart';
@@ -17,7 +18,7 @@ class _AdminPanelState extends State<AdminPanel> {
   List<User> users = [];
   bool loading = true;
 
-  final String baseUrl = 'http://192.168.184.68:8111';
+  final String baseUrl = 'http://localhost:8111';
 
   @override
   void initState() {
@@ -51,9 +52,7 @@ class _AdminPanelState extends State<AdminPanel> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      users = (data['users'] as List)
-          .map((e) => User.fromJson(e))
-          .toList();
+      users = (data['users'] as List).map((e) => User.fromJson(e)).toList();
     }
 
     setState(() => loading = false);
@@ -85,9 +84,7 @@ class _AdminPanelState extends State<AdminPanel> {
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/authentification/admin-create-user'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'first_name': firstName,
         'last_name': lastName,
@@ -124,23 +121,19 @@ class _AdminPanelState extends State<AdminPanel> {
               children: [
                 TextField(
                   controller: firstNameCtrl,
-                  decoration:
-                      const InputDecoration(labelText: 'Prénom'),
+                  decoration: const InputDecoration(labelText: 'Prénom'),
                 ),
                 TextField(
                   controller: lastNameCtrl,
-                  decoration:
-                      const InputDecoration(labelText: 'Nom'),
+                  decoration: const InputDecoration(labelText: 'Nom'),
                 ),
                 TextField(
                   controller: emailCtrl,
-                  decoration:
-                      const InputDecoration(labelText: 'Email'),
+                  decoration: const InputDecoration(labelText: 'Email'),
                 ),
                 TextField(
                   controller: passwordCtrl,
-                  decoration:
-                      const InputDecoration(labelText: 'Mot de passe'),
+                  decoration: const InputDecoration(labelText: 'Mot de passe'),
                   obscureText: true,
                 ),
                 const SizedBox(height: 12),
@@ -148,8 +141,7 @@ class _AdminPanelState extends State<AdminPanel> {
                 /// ✅ ADMIN SWITCH
                 SwitchListTile(
                   title: const Text('Administrateur'),
-                  subtitle: const Text(
-                      'Donner les droits administrateur'),
+                  subtitle: const Text('Donner les droits administrateur'),
                   value: isAdmin,
                   onChanged: (value) {
                     setStateDialog(() => isAdmin = value);
@@ -214,7 +206,7 @@ class _AdminPanelState extends State<AdminPanel> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Fermer'),
-          )
+          ),
         ],
       ),
     );
@@ -238,13 +230,50 @@ class _AdminPanelState extends State<AdminPanel> {
             icon: const Icon(Icons.person_add),
             onPressed: showCreateUserDialog,
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: loadUsers,
-          ),
-
+          IconButton(icon: const Icon(Icons.refresh), onPressed: loadUsers),
         ],
       ),
+
+      // ✅ Hamburger Drawer
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.deepPurple),
+              child: Text(
+                'Admin Menu',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.people),
+              title: const Text('Utilisateurs'),
+              onTap: () {
+                Navigator.pop(context); // Ferme le drawer
+                // Ici tu peux rester sur AdminPanel ou rafraîchir
+                loadUsers();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.report),
+              title: const Text('Plaintes'),
+              onTap: () {
+                Navigator.pop(context);
+                // Exemple de navigation vers une page Complaints
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        const ComplaintListPage(), // créer ce screen
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
@@ -264,23 +293,22 @@ class _AdminPanelState extends State<AdminPanel> {
                       const SizedBox(width: 16),
                       _statCard(
                         title: 'Admins',
-                        value: users.where((u) => u.email
-                            .toLowerCase()
-                            .contains('admin')).length.toString(),
+                        value: users
+                            .where(
+                              (u) => u.email.toLowerCase().contains('admin'),
+                            )
+                            .length
+                            .toString(),
                         icon: Icons.admin_panel_settings,
                         color: Colors.deepPurple,
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 24),
 
                   const Text(
                     'Liste des utilisateurs',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 12),
@@ -289,12 +317,12 @@ class _AdminPanelState extends State<AdminPanel> {
                   Expanded(
                     child: ListView.separated(
                       itemCount: users.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: 12),
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (_, i) {
                         final user = users[i];
-                        final isAdmin =
-                            user.email.toLowerCase().contains('admin');
+                        final isAdmin = user.email.toLowerCase().contains(
+                          'admin',
+                        );
 
                         return Container(
                           padding: const EdgeInsets.all(14),
@@ -329,8 +357,7 @@ class _AdminPanelState extends State<AdminPanel> {
                               const SizedBox(width: 16),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       '${user.firstName} ${user.lastName}',
@@ -353,8 +380,7 @@ class _AdminPanelState extends State<AdminPanel> {
                                   Icons.delete_outline,
                                   color: Colors.red,
                                 ),
-                                onPressed: () =>
-                                    deleteUser(user.id!),
+                                onPressed: () => deleteUser(user.id!),
                               ),
                             ],
                           ),
@@ -399,10 +425,7 @@ class _AdminPanelState extends State<AdminPanel> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: TextStyle(color: Colors.grey.shade600),
-                ),
+                Text(title, style: TextStyle(color: Colors.grey.shade600)),
                 const SizedBox(height: 4),
                 Text(
                   value,
@@ -412,7 +435,7 @@ class _AdminPanelState extends State<AdminPanel> {
                   ),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),
