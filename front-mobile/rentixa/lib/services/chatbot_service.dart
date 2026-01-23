@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/chat.dart';
 
 class ChatbotService {
-  static const String baseUrl = "http://172.24.162.10:8111/chatbot";
+  static const String baseUrl = "http://10.0.2.2:8111/chatbot";
 
   /// Send message
   static Future<String> sendMessage({
