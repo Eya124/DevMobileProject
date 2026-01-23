@@ -1,15 +1,14 @@
 from rest_framework.decorators import api_view, permission_classes
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-
+from rest_framework.permissions import AllowAny
+ 
 from authentification.authentication import User
-from ekrili.permissions import IsAdminPermission
 from .models import Complaint
 from .serializers import ComplaintSerializer
 from .utils import get_all_complaints, send_reply_email
 import json
 from django.utils import timezone
-from rest_framework.permissions import IsAdminUser
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 @swagger_auto_schema(
@@ -22,7 +21,7 @@ from drf_yasg import openapi
     responses={200: ComplaintSerializer(many=True)}
 )
 @api_view(['GET'])
-@permission_classes([IsAdminPermission])
+@permission_classes([AllowAny])
 def getAllComplaints(request):
     page_number = request.query_params.get('page')
     property_to_sort = request.query_params.get('sort')
@@ -33,7 +32,7 @@ def getAllComplaints(request):
 
     return JsonResponse({"Complaints": serializer.data}, safe=False)
 @api_view(['GET'])
-@permission_classes([IsAdminPermission])
+@permission_classes([AllowAny])
 def getComplaintById(request, id):
     complaint = get_object_or_404(Complaint, id=id)
     serializer = ComplaintSerializer(complaint)
@@ -45,7 +44,7 @@ def getComplaintById(request, id):
     responses={201: ComplaintSerializer}
 )
 @api_view(['POST'])
-@permission_classes([])
+@permission_classes([AllowAny])
 def createComplaint(request):
     data = json.loads(request.body)
 
@@ -56,7 +55,7 @@ def createComplaint(request):
 
     return JsonResponse({"errors": serializer.errors}, status=400)
 @api_view(['PUT'])
-@permission_classes([])
+@permission_classes([AllowAny])
 def updateComplaint(request, id):
     complaint = get_object_or_404(Complaint, id=id)
     data = json.loads(request.body)
@@ -68,7 +67,7 @@ def updateComplaint(request, id):
 
     return JsonResponse({"errors": serializer.errors}, status=400)
 @api_view(['DELETE'])
-@permission_classes([])
+@permission_classes([AllowAny])
 def deleteComplaint(request, id):
     complaint = get_object_or_404(Complaint, id=id)
     complaint.delete()
@@ -91,7 +90,7 @@ def deleteComplaint(request, id):
     responses={200: ComplaintSerializer}
 )
 @api_view(['PUT'])
-@permission_classes([IsAdminPermission])
+@permission_classes([AllowAny])
 def replyToComplaint(request, id):
     complaint = get_object_or_404(Complaint, id=id)
     data = json.loads(request.body)

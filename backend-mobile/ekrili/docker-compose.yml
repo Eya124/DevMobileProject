@@ -14,7 +14,6 @@ services:
       volumes:
         - pgdb:/var/lib/postgresql/data
         - ./list_tables:/list_tables
-
 volumes:
   pgdb:
 
