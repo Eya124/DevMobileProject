@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:rentixa/screens/complaint/complaint_list.dart';
 
 import '../models/user.dart';
-import 'package:rentixa/widgets/header.dart';
 import 'package:rentixa/providers/auth_provider.dart';
 
 class AdminPanel extends StatefulWidget {
@@ -20,10 +20,10 @@ class _AdminPanelState extends State<AdminPanel> {
   List<User> users = [];
   bool loading = true;
 
-  /// 🔥 MAP ADMIN (sans toucher User.dart)
+  /// 🔥 MAP ADMIN
   final Map<int, bool> adminMap = {};
 
-  final String baseUrl = 'http://192.168.184.68:8111';
+  final String baseUrl = 'http://10.0.2.2:8111';
 
   @override
   void initState() {
@@ -183,21 +183,76 @@ class _AdminPanelState extends State<AdminPanel> {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FB),
 
-      /// ✅ HEADER GLOBAL
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
-        child: Consumer<AuthProvider>(
-          builder: (context, authProvider, _) {
-            return Header(
-              isConnected: true,
-              isVerified: true,
-              isAdmin: true,
-              username: authProvider.userInitials,
-            );
-          },
+      /// ✅ APPBAR AVEC HAMBURGER AUTO
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+        title: const Text(
+          'Admin Dashboard',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Ajouter un utilisateur',
+            icon: const Icon(Icons.person_add),
+            onPressed: showCreateUserDialog,
+          ),
+          IconButton(
+            tooltip: 'Rafraîchir',
+            icon: const Icon(Icons.refresh),
+            onPressed: loadUsers,
+          ),
+        ],
+      ),
+
+      /// 🍔 DRAWER
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.deepPurple),
+              child: Text(
+                'Admin Menu',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.people),
+              title: const Text('Utilisateurs'),
+              onTap: () {
+                Navigator.pop(context);
+                loadUsers();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.report),
+              title: const Text('Plaintes'),
+              onTap: () {
+                Navigator.pop(context);
+                // Exemple de navigation vers une page Complaints
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        const ComplaintListPage(), // créer ce screen
+                  ),
+                );
+              },
+            ),
+
+
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Déconnexion'),
+             
+            ),
+          ],
         ),
       ),
 
+      /// 📄 BODY
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
@@ -205,25 +260,6 @@ class _AdminPanelState extends State<AdminPanel> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  /// ACTIONS
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        tooltip: 'Ajouter un utilisateur',
-                        icon: const Icon(Icons.person_add),
-                        onPressed: showCreateUserDialog,
-                      ),
-                      IconButton(
-                        tooltip: 'Rafraîchir',
-                        icon: const Icon(Icons.refresh),
-                        onPressed: loadUsers,
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 8),
-
                   /// 📊 STATS
                   Wrap(
                     spacing: 16,
@@ -249,19 +285,17 @@ class _AdminPanelState extends State<AdminPanel> {
                     ],
                   ),
                   const SizedBox(height: 24),
-
                   const Text(
                     'Liste des utilisateurs',
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-
                   const SizedBox(height: 12),
-
                   Expanded(
                     child: ListView.separated(
                       itemCount: users.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: 12),
                       itemBuilder: (_, i) {
                         final user = users[i];
                         final isAdmin = adminMap[user.id] == true;
@@ -282,14 +316,14 @@ class _AdminPanelState extends State<AdminPanel> {
                                   user.firstName.isNotEmpty
                                       ? user.firstName[0].toUpperCase()
                                       : '?',
-                                  style:
-                                      const TextStyle(color: Colors.white),
+                                  style: const TextStyle(color: Colors.white),
                                 ),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       '${user.firstName} ${user.lastName}',

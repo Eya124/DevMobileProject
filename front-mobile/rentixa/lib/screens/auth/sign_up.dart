@@ -26,13 +26,76 @@ class _SignUpPageState extends State<SignUpPage> {
   bool isLoading = false;
   bool obscurePassword = true;
   bool obscureConfirmPassword = true;
-
   String? errorMessage;
 
   static const Color primaryOrange = Colors.orange;
 
   @override
+  void initState() {
+    super.initState();
+    passwordController.addListener(() => setState(() {}));
+  }
+
+  // ================= VALIDATIONS =================
+
+  bool isValidEmail(String email) {
+    final regex =
+        RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return regex.hasMatch(email);
+  }
+
+  String? validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Mot de passe obligatoire';
+    }
+    if (value.length < 6) {
+      return 'Minimum 6 caractères';
+    }
+    if (!RegExp(r'[A-Z]').hasMatch(value)) {
+      return 'Ajoutez une majuscule';
+    }
+    if (!RegExp(r'[a-z]').hasMatch(value)) {
+      return 'Ajoutez une minuscule';
+    }
+    if (!RegExp(r'[0-9]').hasMatch(value)) {
+      return 'Ajoutez un chiffre';
+    }
+    if (!RegExp(r'[!@#\$&*~]').hasMatch(value)) {
+      return 'Ajoutez un caractère spécial';
+    }
+    return null;
+  }
+
+  int passwordStrength(String password) {
+    int score = 0;
+    if (password.length >= 6) score++;
+    if (RegExp(r'[A-Z]').hasMatch(password)) score++;
+    if (RegExp(r'[a-z]').hasMatch(password)) score++;
+    if (RegExp(r'[0-9]').hasMatch(password)) score++;
+    if (RegExp(r'[!@#\$&*~]').hasMatch(password)) score++;
+    return score;
+  }
+
+  Color strengthColor(int score) {
+    if (score <= 2) return Colors.red;
+    if (score == 3) return Colors.orange;
+    return Colors.green;
+  }
+
+  String strengthLabel(int score) {
+    if (score <= 2) return 'Faible';
+    if (score == 3) return 'Moyen';
+    return 'Fort';
+  }
+
+  // ================= UI =================
+
+  @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    final score = passwordStrength(passwordController.text);
+    final isPasswordStrong = score >= 4;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9F6F2),
       appBar: PreferredSize(
@@ -40,13 +103,12 @@ class _SignUpPageState extends State<SignUpPage> {
         child: Consumer<AuthProvider>(
           builder: (context, authProvider, _) {
             return Header(
-              isConnected: authProvider.userId != null,
-              isVerified: authProvider.userId != null,
+              isConnected: false,
+              isVerified: false,
               isAdmin: false,
-              username: authProvider.userInitials,
-              onSignIn: () {
-                Navigator.pushReplacementNamed(context, '/sign-in');
-              },
+              username: '',
+              onSignIn: () =>
+                  Navigator.pushReplacementNamed(context, '/sign-in'),
             );
           },
         ),
@@ -54,7 +116,8 @@ class _SignUpPageState extends State<SignUpPage> {
       body: Center(
         child: SingleChildScrollView(
           child: Container(
-            width: 430,
+            width: isMobile ? double.infinity : 430,
+            margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -73,49 +136,50 @@ class _SignUpPageState extends State<SignUpPage> {
                 children: [
                   Image.asset('assets/logo_ekri.png', width: 85),
                   const SizedBox(height: 20),
-
                   const Text(
                     "Créer un compte",
                     style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.4,
-                    ),
+                        fontSize: 30, fontWeight: FontWeight.bold),
                   ),
-
                   const SizedBox(height: 6),
                   Text(
                     "Rejoignez-nous en quelques secondes",
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade600),
                   ),
-
                   const SizedBox(height: 26),
 
                   if (errorMessage != null)
                     _messageBox(errorMessage!, Colors.red),
 
-                  /// PRENOM & NOM
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _inputField(
-                          label: 'Prénom',
-                          controller: firstNameController,
-                          icon: Icons.person_outline,
+                  isMobile
+                      ? Column(
+                          children: [
+                            _inputField(
+                                label: 'Prénom',
+                                controller: firstNameController,
+                                icon: Icons.person_outline),
+                            const SizedBox(height: 18),
+                            _inputField(
+                                label: 'Nom',
+                                controller: lastNameController,
+                                icon: Icons.badge_outlined),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                                child: _inputField(
+                                    label: 'Prénom',
+                                    controller: firstNameController,
+                                    icon: Icons.person_outline)),
+                            const SizedBox(width: 14),
+                            Expanded(
+                                child: _inputField(
+                                    label: 'Nom',
+                                    controller: lastNameController,
+                                    icon: Icons.badge_outlined)),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: _inputField(
-                          label: 'Nom',
-                          controller: lastNameController,
-                          icon: Icons.badge_outlined,
-                        ),
-                      ),
-                    ],
-                  ),
 
                   const SizedBox(height: 18),
 
@@ -125,7 +189,9 @@ class _SignUpPageState extends State<SignUpPage> {
                     icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                     validator: (v) =>
-                        v != null && v.contains('@') ? null : 'Email invalide',
+                        v != null && isValidEmail(v)
+                            ? null
+                            : 'Email invalide',
                   ),
 
                   const SizedBox(height: 18),
@@ -136,6 +202,44 @@ class _SignUpPageState extends State<SignUpPage> {
                     obscure: obscurePassword,
                     toggle: () =>
                         setState(() => obscurePassword = !obscurePassword),
+                    validator: validatePassword,
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  LinearProgressIndicator(
+                    value: score / 5,
+                    color: strengthColor(score),
+                    minHeight: 6,
+                    backgroundColor: Colors.grey.shade300,
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  Text(
+                    'Sécurité : ${strengthLabel(score)}',
+                    style: TextStyle(
+                        color: strengthColor(score),
+                        fontWeight: FontWeight.w600),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Column(
+                    children: [
+                      _checkItem('6 caractères minimum',
+                          passwordController.text.length >= 6),
+                      _checkItem('1 majuscule',
+                          RegExp(r'[A-Z]').hasMatch(passwordController.text)),
+                      _checkItem('1 minuscule',
+                          RegExp(r'[a-z]').hasMatch(passwordController.text)),
+                      _checkItem('1 chiffre',
+                          RegExp(r'[0-9]').hasMatch(passwordController.text)),
+                      _checkItem(
+                          '1 caractère spécial',
+                          RegExp(r'[!@#\$&*~]')
+                              .hasMatch(passwordController.text)),
+                    ],
                   ),
 
                   const SizedBox(height: 18),
@@ -144,21 +248,20 @@ class _SignUpPageState extends State<SignUpPage> {
                     label: 'Confirmer le mot de passe',
                     controller: confirmPasswordController,
                     obscure: obscureConfirmPassword,
-                    toggle: () => setState(
-                        () => obscureConfirmPassword = !obscureConfirmPassword),
+                    toggle: () => setState(() =>
+                        obscureConfirmPassword = !obscureConfirmPassword),
                     validator: (v) => v != passwordController.text
                         ? 'Les mots de passe ne correspondent pas'
                         : null,
                   ),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 30),
 
-                  /// BUTTON ORANGE PREMIUM
                   SizedBox(
                     width: double.infinity,
                     height: 54,
                     child: ElevatedButton(
-                      onPressed: isLoading
+                      onPressed: isLoading || !isPasswordStrong
                           ? null
                           : () {
                               if (_formKey.currentState!.validate()) {
@@ -166,45 +269,20 @@ class _SignUpPageState extends State<SignUpPage> {
                               }
                             },
                       style: ElevatedButton.styleFrom(
-                        elevation: 4,
                         backgroundColor: primaryOrange,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
+                            borderRadius: BorderRadius.circular(14)),
                       ),
                       child: isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
+                          ? const CircularProgressIndicator(
+                              color: Colors.white)
                           : const Text(
                               'Créer mon compte',
                               style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.3,
-                              ),
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold),
                             ),
                     ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text("Déjà un compte ? "),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.pushReplacementNamed(context, '/sign-in');
-                        },
-                        child: const Text(
-                          'Se connecter',
-                          style: TextStyle(
-                            color: primaryOrange,
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),
@@ -215,7 +293,8 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  /// INPUT FIELD ORANGE
+  // ================= COMPONENTS =================
+
   Widget _inputField({
     required String label,
     required TextEditingController controller,
@@ -234,21 +313,16 @@ class _SignUpPageState extends State<SignUpPage> {
           validator: validator ??
               (v) => v == null || v.isEmpty ? 'Champ obligatoire' : null,
           decoration: InputDecoration(
-            prefixIcon: icon != null ? Icon(icon, color: primaryOrange) : null,
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: primaryOrange, width: 2),
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
+            prefixIcon:
+                icon != null ? Icon(icon, color: primaryOrange) : null,
+            border:
+                OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
         ),
       ],
     );
   }
 
-  /// PASSWORD FIELD
   Widget _passwordField({
     required String label,
     required TextEditingController controller,
@@ -259,12 +333,22 @@ class _SignUpPageState extends State<SignUpPage> {
     return _inputField(
       label: label,
       controller: controller,
-      validator: validator,
       icon: Icons.lock_outline,
+      validator: validator,
     );
   }
 
-  /// MESSAGE BOX
+  Widget _checkItem(String text, bool ok) {
+    return Row(
+      children: [
+        Icon(ok ? Icons.check_circle : Icons.cancel,
+            color: ok ? Colors.green : Colors.grey, size: 18),
+        const SizedBox(width: 6),
+        Text(text),
+      ],
+    );
+  }
+
   Widget _messageBox(String text, Color color) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -283,7 +367,6 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  /// SIGN UP LOGIC (INCHANGÉE)
   Future<void> _handleSignUp() async {
     setState(() {
       isLoading = true;
@@ -305,21 +388,17 @@ class _SignUpPageState extends State<SignUpPage> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         final currentUser = data['CurrentUser'] ?? {};
-
-        final userId = currentUser['id'];
-        final firstName = currentUser['first_name'] ?? '';
-        final lastName = currentUser['last_name'] ?? '';
-        final email = currentUser['email'] ?? '';
-
-        if (userId != null) {
-          Provider.of<AuthProvider>(context, listen: false)
-              .setUserData(userId.toString(), firstName, lastName, email);
-          Navigator.pushReplacementNamed(context, '/verify-otp');
-        }
+        Provider.of<AuthProvider>(context, listen: false).setUserData(
+          currentUser['id'].toString(),
+          currentUser['first_name'] ?? '',
+          currentUser['last_name'] ?? '',
+          currentUser['email'] ?? '',
+        );
+        Navigator.pushReplacementNamed(context, '/verify-otp');
       } else {
         errorMessage = 'Inscription échouée';
       }
-    } catch (e) {
+    } catch (_) {
       errorMessage = 'Erreur réseau';
     } finally {
       setState(() => isLoading = false);

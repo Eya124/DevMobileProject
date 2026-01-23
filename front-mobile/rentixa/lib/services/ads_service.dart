@@ -8,7 +8,7 @@ class AdsService {
   // --- URL CONFIGURATION ---
   static String get baseUrl {
     // 1. If running on Web, use localhost
-      return 'http://localhost:8111/annonces';
+      return 'http://10.0.2.2:8111/annonces';
     // 2. If running on Android Emulator, use 10.0.2.2
     // 3. If running on Physical Device, use your PC's IP 
   }
