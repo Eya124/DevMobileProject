@@ -161,7 +161,7 @@ class _HomeWithFilterState extends State<HomeWithFilter> {
           isAdmin: false,
           username: authProvider.userInitials,
           onSignIn: () {
-            Navigator.pushNamed(context, '/home');
+            Navigator.pushNamed(context, '/sign-in');
           },
           onAddAd: _navigateToCreateAd, 
           leading: isUserLoggedIn 

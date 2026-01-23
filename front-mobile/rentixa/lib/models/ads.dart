@@ -68,7 +68,7 @@ class Ads {
                 String imageUrl = x.toString();
                 // Convert relative URLs to absolute URLs
                 if (imageUrl.startsWith('/media/')) {
-                  return 'http://localhost:8111$imageUrl';
+                  return 'http://10.0.2.2:8111$imageUrl';
                 }
                 return imageUrl;
               }))
