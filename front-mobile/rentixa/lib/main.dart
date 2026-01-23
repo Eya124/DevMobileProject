@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'package:rentixa/admin/admin_panel.dart';
+ 
 // --- Providers ---
 import 'package:rentixa/providers/auth_provider.dart';
 import 'package:rentixa/providers/search_provider.dart';
-
+import 'package:rentixa/screens/feedback/feedback_list_page.dart';
+ 
 // --- Services & Models ---
 import 'package:rentixa/services/ads_service.dart';
 import 'package:rentixa/models/ads.dart';
-
+ 
 // --- Widgets & Pages ---
 import 'package:rentixa/widgets/header.dart';
 import 'package:rentixa/widgets/ad_details_modal.dart';
-import 'package:rentixa/screens/ads/create_ad_modal.dart'; 
+import 'package:rentixa/screens/ads/create_ad_modal.dart';
 import 'package:rentixa/screens/auth/sign_up.dart';
 import 'package:rentixa/screens/auth/sign_in.dart';
 import 'package:rentixa/screens/auth/verify_otp.dart';
@@ -21,13 +23,13 @@ import 'package:rentixa/screens/auth/users_page.dart';
 import 'package:rentixa/screens/complaint/Add_complaint.dart';
 import 'package:rentixa/screens/complaint/complaint_list.dart';
 import 'package:rentixa/screens/chatbot/chat_discussion.dart';
-
+ 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+ 
   final authProvider = AuthProvider();
   await authProvider.restoreSession(); // ✅ RESTAURATION SESSION
-
+ 
   runApp(
     MultiProvider(
       providers: [
@@ -39,11 +41,11 @@ void main() async {
     ),
   );
 }
-
-
+ 
+ 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
+ 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -68,18 +70,19 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
+ 
 class HomeWithFilter extends StatefulWidget {
   const HomeWithFilter({super.key});
-
+ 
   @override
   State<HomeWithFilter> createState() => _HomeWithFilterState();
 }
-
+ 
 class _HomeWithFilterState extends State<HomeWithFilter> {
   bool isLoadingAds = false;
   String? errorMessage;
-
+  // State for ads
+  List<Ads> ads = [];
   @override
   void initState() {
     super.initState();
@@ -87,18 +90,23 @@ class _HomeWithFilterState extends State<HomeWithFilter> {
       _loadAds();
     });
   }
-
+ 
   Future<void> _loadAds() async {
     if (!mounted) return;
     setState(() {
       isLoadingAds = true;
       errorMessage = null;
     });
-
+ 
     try {
-      final List<Ads> ads = await AdsService.getAllAds();
+      final List<Ads> adsData = await AdsService.getAllAds();
+      print('Ads loaded: ${adsData.length} items');
+      print('First ad: ${adsData.isNotEmpty ? adsData.first.toString() : 'No ads'}');
+      setState(() {
+        ads = adsData;
+      });
       if (mounted) {
-        Provider.of<SearchProvider>(context, listen: false).setSearchResults(ads);
+        Provider.of<SearchProvider>(context, listen: false).setSearchResults(adsData);
       }
     } catch (e) {
       if (mounted) {
@@ -114,27 +122,27 @@ class _HomeWithFilterState extends State<HomeWithFilter> {
       }
     }
   }
-
+ 
   void _navigateToCreateAd() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return CreateAdModal(); 
+        return CreateAdModal();
       },
     );
   }
-
+ 
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final searchProvider = Provider.of<SearchProvider>(context);
-
+ 
     final bool isUserLoggedIn =
         authProvider.userId != null && authProvider.userId != "0";
-
+ 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      
+     
       floatingActionButton: isUserLoggedIn
           ? FloatingActionButton(
               backgroundColor: Colors.orange,
@@ -151,40 +159,62 @@ class _HomeWithFilterState extends State<HomeWithFilter> {
               },
             )
           : null,
-
+ 
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
-        child: Header(
-          isConnected: isUserLoggedIn,
-          isVerified: isUserLoggedIn,
-          isAdmin: false,
-          username: authProvider.userInitials,
-          onSignIn: () {
-            Navigator.pushNamed(context, '/home');
-          },
-          onAddAd: _navigateToCreateAd, 
-          leading: isUserLoggedIn 
+  preferredSize: const Size.fromHeight(70),
+  child: Stack(
+    children: [
+      Header(
+        isConnected: isUserLoggedIn,
+        isVerified: isUserLoggedIn,
+        isAdmin: false,
+        username: authProvider.userInitials,
+        onSignIn: () {
+          Navigator.pushNamed(context, '/home');
+        },
+        onAddAd: _navigateToCreateAd,
+        leading: isUserLoggedIn
             ? IconButton(
                 icon: const Icon(Icons.add_box_outlined, color: Colors.orange),
                 onPressed: _navigateToCreateAd,
                 tooltip: "Ajouter une annonce",
               )
             : null,
-        ),
       ),
-
+      if (isUserLoggedIn)
+        // 🔔 FEEDBACK BUTTON
+        Positioned(
+          right: 150,
+          top: 12,
+          child: IconButton(
+            tooltip: "Donner un avis",
+            icon: const Icon(Icons.rate_review, color: Colors.orange),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => FeedbackListPage(adsList: ads),
+                ),
+              );
+            },
+          ),
+        ),
+    ],
+  ),
+),
+ 
       body: RefreshIndicator(
         onRefresh: _loadAds,
         child: _buildBody(searchProvider),
       ),
     );
   }
-
+ 
   Widget _buildBody(SearchProvider searchProvider) {
     if (isLoadingAds) {
       return const Center(child: CircularProgressIndicator());
     }
-
+ 
     if (errorMessage != null) {
       return Center(
         child: Column(
@@ -202,13 +232,13 @@ class _HomeWithFilterState extends State<HomeWithFilter> {
         ),
       );
     }
-
+ 
     if (searchProvider.searchResults.isEmpty) {
       return const Center(
         child: Text("Aucune annonce disponible pour le moment."),
       );
     }
-
+ 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       itemCount: searchProvider.searchResults.length,
@@ -253,7 +283,7 @@ class _HomeWithFilterState extends State<HomeWithFilter> {
                 context: context,
                 builder: (BuildContext context) {
                   return AdDetailsModal(
-                    adId: ad.id ?? 0, 
+                    adId: ad.id ?? 0,
                     basicAd: ad,
                   );
                 },
