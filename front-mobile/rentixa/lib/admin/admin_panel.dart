@@ -139,8 +139,7 @@ class _AdminPanelState extends State<AdminPanel> {
                 ),
                 TextField(
                   controller: passwordCtrl,
-                  decoration:
-                      const InputDecoration(labelText: 'Mot de passe'),
+                  decoration: const InputDecoration(labelText: 'Mot de passe'),
                   obscureText: true,
                 ),
                 const SizedBox(height: 12),
@@ -249,7 +248,6 @@ class _AdminPanelState extends State<AdminPanel> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 24),
 
                   const Text(
@@ -263,8 +261,7 @@ class _AdminPanelState extends State<AdminPanel> {
                   Expanded(
                     child: ListView.separated(
                       itemCount: users.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: 12),
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (_, i) {
                         final user = users[i];
                         final isAdmin = adminMap[user.id] == true;
@@ -292,8 +289,7 @@ class _AdminPanelState extends State<AdminPanel> {
                               const SizedBox(width: 16),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       '${user.firstName} ${user.lastName}',

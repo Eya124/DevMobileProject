@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:rentixa/admin/UserHomePage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 
 import '../../widgets/header.dart';
 import 'package:rentixa/services/auth_service.dart';
@@ -70,19 +70,13 @@ class _SignInPageState extends State<SignInPage> {
               child: Column(
                 children: [
                   /// LOGO
-                  Image.asset(
-                    'assets/logo_ekri.png',
-                    width: 85,
-                  ),
+                  Image.asset('assets/logo_ekri.png', width: 85),
                   const SizedBox(height: 18),
 
                   /// TITLE
                   const Text(
                     'Se connecter',
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 6),
@@ -204,18 +198,16 @@ class _SignInPageState extends State<SignInPage> {
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
-          validator: validator ??
+          validator:
+              validator ??
               (v) => v == null || v.isEmpty ? 'Champ obligatoire' : null,
           decoration: InputDecoration(
             prefixIcon: Icon(icon, color: primaryOrange),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: primaryOrange, width: 2),
+              borderSide: const BorderSide(color: primaryOrange, width: 2),
             ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
         ),
       ],
@@ -251,12 +243,9 @@ class _SignInPageState extends State<SignInPage> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: primaryOrange, width: 2),
+              borderSide: const BorderSide(color: primaryOrange, width: 2),
             ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
         ),
       ],
@@ -277,10 +266,7 @@ class _SignInPageState extends State<SignInPage> {
           Icon(Icons.error_outline, color: color),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              text,
-              style: TextStyle(color: color),
-            ),
+            child: Text(text, style: TextStyle(color: color)),
           ),
         ],
       ),
@@ -289,75 +275,76 @@ class _SignInPageState extends State<SignInPage> {
 
   /// ✅ SIGN IN LOGIC AVEC REDIRECTION ADMIN / USER
   Future<void> _handleSignIn() async {
-  setState(() {
-    isLoading = true;
-    errorMessage = null;
-  });
-
-  try {
-    final response = await AuthService.signIn(
-      email: emailController.text,
-      password: passwordController.text,
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-
-      final token = data['token'];
-      final currentUser = data['CurrentUser'] ?? {};
-
-      final userId = currentUser['id'];
-      final firstName =
-          currentUser['first_name'] ?? currentUser['username'] ?? '';
-      final lastName = currentUser['last_name'] ?? '';
-      final email = currentUser['email'] ?? '';
-      final bool isAdmin = currentUser['is_admin'] == true;
-
-      if (userId == null || token == null) {
-        setState(() {
-          errorMessage = 'Données utilisateur invalides';
-        });
-        return;
-      }
-
-      /// ✅ SAUVEGARDE CORRECTE
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('token', token);
-      await prefs.setString('userId', userId.toString());
-      await prefs.setString('firstName', firstName);
-      await prefs.setString('lastName', lastName);
-      await prefs.setString('email', email);
-
-      print('✅ SESSION SAUVEGARDÉE : $email');
-
-      /// ✅ PROVIDER
-      Provider.of<AuthProvider>(context, listen: false)
-          .setUserData(userId.toString(), firstName, lastName, email);
-
-      /// ✅ REDIRECTION
-      if (isAdmin) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const AdminPanel()),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const ProfilePage()),
-        );
-      }
-    } else {
-      setState(() {
-        errorMessage = 'Email ou mot de passe incorrect';
-      });
-    }
-  } catch (e) {
     setState(() {
-      errorMessage = 'Erreur réseau';
+      isLoading = true;
+      errorMessage = null;
     });
-  } finally {
-    setState(() => isLoading = false);
-  }
-}
 
+    try {
+      final response = await AuthService.signIn(
+        email: emailController.text,
+        password: passwordController.text,
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        final token = data['token'];
+        final currentUser = data['CurrentUser'] ?? {};
+
+        final userId = currentUser['id'];
+        final firstName =
+            currentUser['first_name'] ?? currentUser['username'] ?? '';
+        final lastName = currentUser['last_name'] ?? '';
+        final email = currentUser['email'] ?? '';
+        final bool isAdmin = currentUser['is_admin'] == true;
+
+        if (userId == null || token == null) {
+          setState(() {
+            errorMessage = 'Données utilisateur invalides';
+          });
+          return;
+        }
+
+        /// ✅ SAUVEGARDE CORRECTE
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', token);
+        await prefs.setString('userId', userId.toString());
+        await prefs.setString('firstName', firstName);
+        await prefs.setString('lastName', lastName);
+        await prefs.setString('email', email);
+
+        print('✅ SESSION SAUVEGARDÉE : $email');
+
+        /// ✅ PROVIDER
+        Provider.of<AuthProvider>(
+          context,
+          listen: false,
+        ).setUserData(userId.toString(), firstName, lastName, email);
+
+        /// ✅ REDIRECTION
+        if (isAdmin) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const AdminPanel()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const ProfilePage()),
+          );
+        }
+      } else {
+        setState(() {
+          errorMessage = 'Email ou mot de passe incorrect';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Erreur réseau';
+      });
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
 }

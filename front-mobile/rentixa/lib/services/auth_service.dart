@@ -89,23 +89,27 @@ class AuthService {
   }
 
   static Future<http.Response> changePassword({
-  required String oldPassword,
-  required String newPassword,
-}) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
 
-  return await http.post(
-    Uri.parse('$baseUrl/users/change-my-password/'),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    },
-    body: jsonEncode({
-      'old_password': oldPassword,
-      'new_password': newPassword,
-    }),
-  );
-}
+    return await http.post(
+      Uri.parse('$baseUrl/users/change-my-password/'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'old_password': oldPassword,
+        'new_password': newPassword,
+      }),
+    );
+  }
 
+  static Future<int> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('user_id') ?? 0;
+  }
 }
