@@ -108,13 +108,13 @@ class _HomeWithFilterState extends State<HomeWithFilter> {
   }
 
   void _navigateToCreateAd() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return CreateAdModal(); 
-      },
-    );
-  }
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return const CreateAdModal(); 
+        },
+      ).then((_) => _loadAds()); // This triggers every time the modal closes
+    }
 
   @override
   Widget build(BuildContext context) {

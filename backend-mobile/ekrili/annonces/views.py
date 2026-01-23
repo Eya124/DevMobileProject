@@ -248,28 +248,42 @@ def all_annonce_by_user(request, id):
         }
         list_annonces.append(item)
     return JsonResponse({'all_annonces': list_annonces}, status=200)
-
-@api_view(['POST'])
+@csrf_exempt
+@api_view(['POST', 'PUT'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def update_annonce(request, id):
-    """Update an existing annonce with new data and images"""
+    """Update an existing annonce. Explicitly allowing POST and PUT."""
+    
+    # 1. Handle Method check manually just in case
+    if request.method not in ['POST', 'PUT']:
+        return JsonResponse({'error': f'Method {request.method} not allowed'}, status=405)
+
+    # 2. Check content type
     if not request.content_type.startswith('multipart/form-data'):
-        return JsonResponse({'error': 'Unsupported content type'}, status=415)
+        return JsonResponse({'error': 'Unsupported content type. Use multipart/form-data'}, status=415)
 
     data = request.POST.copy()
     image_files = request.FILES.getlist('images')
     
+    # 3. Sanitize and convert IDs safely
     try:
-        data['price'] = int(data.get('price', 0))
-        data['state'] = int(data.get('state'))
-        data['delegation'] = int(data.get('delegation')) if data.get('delegation') else None
-        data['jurisdiction'] = int(data.get('jurisdiction')) if data.get('jurisdiction') else None
-        data['type'] = int(data.get('type'))
+        if data.get('price'): data['price'] = int(data.get('price'))
+        if data.get('state'): data['state'] = int(data.get('state'))
+        if data.get('type'): data['type'] = int(data.get('type'))
+        
+        for field in ['delegation', 'jurisdiction']:
+            val = data.get(field)
+            if val and val not in ['null', 'undefined', '']:
+                data[field] = int(val)
+            else:
+                data[field] = None
+                
     except (ValueError, KeyError) as e:
-        return JsonResponse({'error': f'Invalid data: {str(e)}'}, status=400)
+        return JsonResponse({'error': f'Invalid numeric data: {str(e)}'}, status=400)
 
     annonce = get_object_or_404(Annonce, id=id)
+    
     with translation.override('fr'):
         annonce_serializer = AnnonceSerializer(annonce, data=data, partial=True)
 
@@ -279,32 +293,36 @@ def update_annonce(request, id):
         annonce.date_posted = datetime.now().strftime("%Y-%m-%d")
         annonce = annonce_serializer.save()
 
-        # Image Management
+        # 4. Image Management
         folder_path = os.path.join(settings.MEDIA_ROOT, str(annonce.pk))
+        os.makedirs(folder_path, exist_ok=True)
         fs = FileSystemStorage(location=folder_path)
+        
         existing_images = Image.objects.filter(annonce=annonce.id)
-        existing_filenames = [os.path.basename(img.image_url) for img in existing_images]
+        new_request_filenames = [f.name for f in image_files]
 
-        # Delete images not present in the new upload
-        for old_filename in existing_filenames:
-            if old_filename not in [f.name for f in image_files]:
+        # Cleanup old images
+        for old_img in existing_images:
+            old_filename = os.path.basename(old_img.image_url)
+            if old_filename not in new_request_filenames:
                 file_path = os.path.join(folder_path, urllib.parse.unquote(old_filename))
                 if os.path.exists(file_path):
                     os.remove(file_path)
-                Image.objects.filter(image_url__endswith=old_filename, annonce=annonce.id).delete()
+                old_img.delete()
 
         # Save new images
+        existing_filenames = [os.path.basename(img.image_url) for img in Image.objects.filter(annonce=annonce.id)]
         for image_file in image_files:
             if image_file.name not in existing_filenames:
                 filename = fs.save(image_file.name, image_file)
-                image_url = f"/media/{annonce.pk}/{urllib.parse.unquote(filename)}"
+                image_url = os.path.join(settings.MEDIA_URL, str(annonce.pk), filename).replace('\\', '/')
                 img_data = {"image_url": image_url, "annonce": annonce.id}
                 img_serializer = ImageSerializer(data=img_data)
                 if img_serializer.is_valid():
                     img_serializer.save()
 
         return JsonResponse({'message': "L'annonce a été mise à jour avec succès"}, status=200)
-
+    
 @api_view(['PUT'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])

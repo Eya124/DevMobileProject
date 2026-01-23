@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data'; // Required for Uint8List
 import 'package:http/http.dart' as http;
 import 'package:rentixa/models/ads.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -7,10 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AdsService {
   // --- URL CONFIGURATION ---
   static String get baseUrl {
-    // 1. If running on Web, use localhost
-      return 'http://localhost:8111/annonces';
-    // 2. If running on Android Emulator, use 10.0.2.2
-    // 3. If running on Physical Device, use your PC's IP 
+    // Note: If testing on Android Emulator, change localhost to 10.0.2.2
+    return 'http://localhost:8111/annonces'; 
   }
 
   /// 1. Get all advertisements
@@ -31,50 +30,36 @@ class AdsService {
     }
   }
 
+  /// 2. Get All States
   static Future<List<dynamic>> getAllStates() async {
-  try {
-    final url = Uri.parse('$baseUrl/all_states');
-    print('DEBUG: Fetching states from $url'); // Confirming the URL
-    
-    final response = await http.get(url);
-    print('DEBUG: Status Code: ${response.statusCode}');
-    
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      print('DEBUG: Data received: $data'); // See the actual JSON
-      print('DEBUG: Data Type: ${data.runtimeType}'); // Check if it's a List or Map
+    try {
+      final url = Uri.parse('$baseUrl/all_states');
+      final response = await http.get(url);
       
-      // If your Postman shows a direct list [{}, {}], this is correct:
-      if (data is List) {
-        return data;
-      } else if (data is Map && data.containsKey('states')) {
-        return data['states'];
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is List) return data;
+        if (data is Map && data.containsKey('states')) return data['states'];
       }
+      return [];
+    } catch (e) {
+      print('DEBUG: Error fetching states: $e');
+      return [];
     }
-    return [];
-  } catch (e) {
-    print('DEBUG: Network Error: $e');
-    return [];
   }
-}
 
   /// 3. Get Delegations
   static Future<List<dynamic>> getAllDelegationsByStateId(int? stateId) async {
     try {
       if (stateId == null) return [];
-      
       final url = Uri.parse('$baseUrl/all_delegations_by_state/$stateId');
       final response = await http.get(url);
       
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        
-        // Look for the specific key your Django backend is sending
         if (data is Map && data.containsKey('delegations_by_state')) {
           return data['delegations_by_state'];
-        } 
-        // Fallback for direct list
-        else if (data is List) {
+        } else if (data is List) {
           return data;
         }
       }
@@ -85,62 +70,84 @@ class AdsService {
     }
   }
 
- static Future<http.Response> addAd({
+  /// 4. Add Advertisement (Fixed parameter to match Modal)
+  static Future<http.Response> addAd({
     required Ads ad,
-    required List<String> imagePaths,
+    required List<Map<String, dynamic>> images, // Fixed to accept byte data
     String? userId,
     String? token,
   }) async {
     try {
-      // Ensure the path is correct (usually /annonces/add based on your previous logs)
       final url = Uri.parse('$baseUrl/add');
       var request = http.MultipartRequest('POST', url);
 
-      if (token != null) {
-        request.headers['Authorization'] = 'Bearer $token';
-      }
+      if (token != null) request.headers['Authorization'] = 'Bearer $token';
 
-      // MATCHING DJANGO MODEL NAMES
+      // Fields
       request.fields['title'] = ad.title;
       request.fields['description'] = ad.description ?? '';
       request.fields['size'] = ad.size ?? 'S'; 
       request.fields['price'] = ad.price.toString();
-      
-      // Changed from state_id to state, etc.
       request.fields['state'] = ad.state.toString();
       request.fields['delegation'] = ad.delegation?.toString() ?? '';
-      request.fields['jurisdiction'] = '';
       request.fields['type'] = ad.type.toString();
-      
       request.fields['phone'] = ad.phone.toString();
-      request.fields['status'] = 'true';
-      
-      // If your model uses 'user' as the FK name:
       if (userId != null) request.fields['user'] = userId;
 
-      for (String path in imagePaths) {
-        var file = await http.MultipartFile.fromPath('images', path);
-        request.files.add(file);
+      // Images from bytes (Works on Web and Mobile)
+      for (var imgData in images) {
+        request.files.add(http.MultipartFile.fromBytes(
+          'images', 
+          imgData['bytes'] as Uint8List,
+          filename: imgData['name'],
+        ));
       }
 
       final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      // DEBUG LOGGING
-      if (response.statusCode == 400) {
-        print('--- DJANGO ERROR BODY ---');
-        print(response.body); // THIS WILL TELL US EXACTLY WHAT IS WRONG
-        print('--------------------------');
-      }
-
-      return response;
+      return await http.Response.fromStream(streamedResponse);
     } catch (e) {
-      print('DEBUG: Exception in addAd: $e');
       throw Exception('Failed to add advertisement: $e');
     }
   }
 
-  /// 5. Get individual details
+  /// 5. Update Advertisement (NEW)
+  static Future<http.Response> updateAd({
+    required int adId,
+    required Ads ad,
+    required List<Map<String, dynamic>> images,
+    String? token,
+  }) async {
+    try {
+      final url = Uri.parse('$baseUrl/update/$adId'); // Ensure this matches Django URL
+      var request = http.MultipartRequest('PUT', url);
+
+      if (token != null) request.headers['Authorization'] = 'Bearer $token';
+
+      request.fields['title'] = ad.title;
+      request.fields['description'] = ad.description ?? '';
+      request.fields['size'] = ad.size ?? 'S'; 
+      request.fields['price'] = ad.price.toString();
+      request.fields['state'] = ad.state.toString();
+      request.fields['delegation'] = ad.delegation?.toString() ?? '';
+      request.fields['type'] = ad.type.toString();
+      request.fields['phone'] = ad.phone.toString();
+
+      for (var imgData in images) {
+        request.files.add(http.MultipartFile.fromBytes(
+          'images', 
+          imgData['bytes'] as Uint8List,
+          filename: imgData['name'],
+        ));
+      }
+
+      final streamedResponse = await request.send();
+      return await http.Response.fromStream(streamedResponse);
+    } catch (e) {
+      throw Exception('Failed to update advertisement: $e');
+    }
+  }
+
+  /// 6. Get individual details
   static Future<Map<String, dynamic>> getAdDetails(int adId) async {
     try {
       final url = Uri.parse('$baseUrl/$adId');
@@ -154,16 +161,12 @@ class AdsService {
     }
   }
 
-/// Get all Types
+  /// 7. Get all Types
   static Future<List<dynamic>> getAllTypes() async {
     try {
-      // Make sure '/types/all' matches your Django path 
-      // (If states was '/all_states', check if this should be '/all_types')
       final url = Uri.parse('$baseUrl/all_types'); 
       final response = await http.get(url);
-      
       if (response.statusCode == 200) {
-        // We decode the direct list just like we did for states
         return jsonDecode(response.body);
       }
       return [];
@@ -173,38 +176,27 @@ class AdsService {
     }
   }
 
+  /// 8. Delete Advertisement
   static Future<bool> deleteAd(int id) async {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
-      
-      // DEBUG: Let's see all keys currently stored
-      print("Stored keys: ${prefs.getKeys()}");
-
-      // Try all common keys
       final String? token = prefs.getString('access_token') ?? 
                             prefs.getString('token') ?? 
-                            prefs.getString('access') ??
-                            prefs.getString('jwt');
+                            prefs.getString('access');
 
-      if (token == null) {
-        print("Error: No token found. Current keys are: ${prefs.getKeys()}");
-        return false;
-      }
+      if (token == null) return false;
 
       final response = await http.delete(
-        Uri.parse('$baseUrl/annonces/delete/$id/'),
+        Uri.parse('$baseUrl/delete/$id'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token', 
         },
       );
-
-      print("Delete response: ${response.statusCode}");
       return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       print("Delete Exception: $e");
       return false;
     }
   }
-
 }

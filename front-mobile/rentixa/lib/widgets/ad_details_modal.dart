@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/ads.dart';
 import '../services/ads_service.dart';
+import 'package:rentixa/providers/search_provider.dart';
 import '../providers/auth_provider.dart';
 import '../pages/detail_page.dart';
+import '../screens/ads/create_ad_modal.dart'; // Import this to use it for editing
 
 class AdDetailsModal extends StatefulWidget {
   final int adId;
@@ -54,10 +56,10 @@ class _AdDetailsModalState extends State<AdDetailsModal> {
         isLoading = false;
       });
       
-      // Fallback using your Ads model structure
       if (widget.basicAd != null) {
         setState(() {
           adDetails = {
+            'id': widget.basicAd!.id,
             'title': widget.basicAd!.title,
             'type': widget.basicAd!.type,
             'size': widget.basicAd!.size ?? 'N/A',
@@ -66,7 +68,7 @@ class _AdDetailsModalState extends State<AdDetailsModal> {
             'delegation': widget.basicAd!.delegation,
             'description': widget.basicAd!.description,
             'phone': widget.basicAd!.phone,
-            'user_id': widget.basicAd!.user, // FIXED: Changed .userId to .user
+            'user': widget.basicAd!.user, 
             'images': widget.basicAd!.images,
           };
           isLoading = false;
@@ -76,6 +78,7 @@ class _AdDetailsModalState extends State<AdDetailsModal> {
     }
   }
 
+  // --- DELETE LOGIC ---
   Future<void> _deleteAd() async {
     bool confirm = await showDialog(
       context: context,
@@ -98,21 +101,49 @@ class _AdDetailsModalState extends State<AdDetailsModal> {
     try {
       setState(() => isLoading = true);
       final success = await AdsService.deleteAd(widget.adId);
-      
       if (success && mounted) {
-        Navigator.of(context).pop(); 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Annonce supprimée avec succès'), backgroundColor: Colors.green),
-        );
+        final List<Ads> updatedAds = await AdsService.getAllAds();
+        if (mounted) {
+          Provider.of<SearchProvider>(context, listen: false).setSearchResults(updatedAds);
+          Navigator.of(context).pop(); 
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Annonce supprimée'), backgroundColor: Colors.green),
+          );
+        }
       } else {
         throw Exception('Échec de la suppression');
       }
     } catch (e) {
-      setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
+  }
+
+  // --- UPDATE/EDIT LOGIC ---
+  void _openEditModal() {
+    if (adDetails == null) return;
+
+    // Convert the current adDetails Map back to an Ads object for the modal
+    final adToEdit = Ads(
+      id: widget.adId,
+      title: adDetails!['title'],
+      description: adDetails!['description'],
+      price: int.tryParse(adDetails!['price'].toString()) ?? 0,
+      state: adDetails!['state'].toString(),
+      delegation: adDetails!['delegation']?.toString(),
+      type: adDetails!['type'].toString(),
+      phone: int.tryParse(adDetails!['phone'].toString()) ?? 0,
+      size: adDetails!['size'],
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => CreateAdModal(existingAd: adToEdit),
+    ).then((_) => _loadAdDetails()); // Refresh details after closing edit modal
   }
 
   Widget _buildContent() {
@@ -121,13 +152,20 @@ class _AdDetailsModalState extends State<AdDetailsModal> {
     final ad = adDetails!;
     final images = ad['images'] as List<dynamic>? ?? [];
 
-    // --- OWNERSHIP CHECK ---
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final String? loggedInUserId = authProvider.userId;
     
-    // Check 'user' (from API) or 'user_id' (from fallback Map)
-    final dynamic rawOwnerId = ad['user'] ?? ad['user_id'];
-    final String? adOwnerId = rawOwnerId?.toString();
+    final dynamic userData = ad['user'];
+    String? adOwnerId;
+    String ownerEmail = 'Inconnu';
+
+    if (userData is Map) {
+      adOwnerId = userData['id']?.toString();
+      ownerEmail = userData['email']?.toString() ?? 'Inconnu';
+    } else {
+      adOwnerId = userData?.toString() ?? ad['user_id']?.toString();
+      ownerEmail = ad['user_email']?.toString() ?? 'Inconnu';
+    }
 
     final bool isOwner = loggedInUserId != null && 
                          adOwnerId != null && 
@@ -165,8 +203,20 @@ class _AdDetailsModalState extends State<AdDetailsModal> {
           ),
           
           const SizedBox(height: 20),
-          Text(ad['title']?.toString() ?? 'Sans titre', 
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue.shade800)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(ad['title']?.toString() ?? 'Sans titre', 
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue.shade800)),
+              ),
+              if (isOwner)
+                const Chip(
+                  label: Text('Votre annonce', style: TextStyle(fontSize: 10, color: Colors.white)),
+                  backgroundColor: Colors.green,
+                ),
+            ],
+          ),
           Text('${ad['price']?.toString() ?? '0'} DT', 
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.red)),
           
@@ -179,22 +229,23 @@ class _AdDetailsModalState extends State<AdDetailsModal> {
             decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(8)),
             child: Column(
               children: [
-                _buildSpecRow('Type', ad['type']?.toString() ?? 'N/A'),
-                _buildSpecRow('Taille', ad['size']?.toString() ?? 'N/A'),
-                _buildSpecRow('Localisation', '${ad['state'] ?? 'N/A'} - ${ad['delegation'] ?? ''}'),
-                _buildSpecRow('Téléphone', ad['phone']?.toString() ?? 'N/A'),
+                _buildSpecRow('Annonceur', ownerEmail, icon: Icons.email_outlined),
+                _buildSpecRow('Type', ad['type']?.toString() ?? 'N/A', icon: Icons.category_outlined),
+                _buildSpecRow('Taille', ad['size']?.toString() ?? 'N/A', icon: Icons.straighten),
+                _buildSpecRow('Localisation', '${ad['state'] ?? 'N/A'} - ${ad['delegation'] ?? ''}', icon: Icons.location_on_outlined),
+                _buildSpecRow('Téléphone', ad['phone']?.toString() ?? 'N/A', icon: Icons.phone_outlined),
               ],
             ),
           ),
 
           const SizedBox(height: 24),
 
-          // --- ACTION BUTTONS ---
           Row(
             children: [
-              if (isOwner)
+              if (isOwner) ...[
+                // DELETE BUTTON
                 Container(
-                  margin: const EdgeInsets.only(right: 12),
+                  margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
                     color: Colors.red.shade50,
                     borderRadius: BorderRadius.circular(8),
@@ -206,6 +257,21 @@ class _AdDetailsModalState extends State<AdDetailsModal> {
                     tooltip: 'Supprimer',
                   ),
                 ),
+                // UPDATE/EDIT BUTTON
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade200)
+                  ),
+                  child: IconButton(
+                    onPressed: _openEditModal,
+                    icon: const Icon(Icons.edit_outlined, color: Colors.blue),
+                    tooltip: 'Modifier',
+                  ),
+                ),
+              ],
               
               Expanded(
                 child: ElevatedButton(
@@ -236,13 +302,15 @@ class _AdDetailsModalState extends State<AdDetailsModal> {
     );
   }
 
-  Widget _buildSpecRow(String label, String value) {
+  Widget _buildSpecRow(String label, String value, {IconData? icon}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          SizedBox(width: 100, child: Text('$label:', style: const TextStyle(fontWeight: FontWeight.bold))),
-          Expanded(child: Text(value)),
+          if (icon != null) Icon(icon, size: 18, color: Colors.amber), 
+          if (icon != null) const SizedBox(width: 8),
+          SizedBox(width: 90, child: Text('$label:', style: const TextStyle(fontWeight: FontWeight.bold))),
+          Expanded(child: Text(value, style: const TextStyle(color: Colors.black87))),
         ],
       ),
     );
@@ -262,7 +330,7 @@ class _AdDetailsModalState extends State<AdDetailsModal> {
         child: Stack(
           children: [
             isLoading 
-              ? const Center(child: CircularProgressIndicator()) 
+              ? const Center(child: CircularProgressIndicator(color: Colors.orange)) 
               : error != null 
                 ? Center(child: Text('Erreur: $error')) 
                 : _buildContent(),
