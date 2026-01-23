@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:rentixa/admin/admin_panel.dart';
 
 // --- Providers ---
 import 'package:rentixa/providers/auth_provider.dart';
