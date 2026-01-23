@@ -1,10 +1,16 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 import '../../widgets/header.dart';
 import 'package:rentixa/services/auth_service.dart';
 import 'package:rentixa/providers/auth_provider.dart';
+
+// ✅ AJOUTS POUR LA REDIRECTION
+import '../../admin/admin_panel.dart';
+import '../auth/profile.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({Key? key}) : super(key: key);
@@ -110,9 +116,7 @@ class _SignInPageState extends State<SignInPage> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {
-                        // TODO: forgot password
-                      },
+                      onPressed: () {},
                       child: const Text(
                         'Mot de passe oublié ?',
                         style: TextStyle(color: Colors.black87),
@@ -154,40 +158,6 @@ class _SignInPageState extends State<SignInPage> {
                   ),
 
                   const SizedBox(height: 14),
-
-                  /// GOOGLE BUTTON
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: OutlinedButton(
-                      onPressed: () {},
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: primaryOrange),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.asset(
-                            'assets/google_logo.png',
-                            width: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Se connecter avec Google',
-                            style: TextStyle(
-                              color: Colors.deepPurple,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
 
                   /// SIGN UP
                   Row(
@@ -317,43 +287,77 @@ class _SignInPageState extends State<SignInPage> {
     );
   }
 
-  /// SIGN IN LOGIC (INCHANGÉE)
+  /// ✅ SIGN IN LOGIC AVEC REDIRECTION ADMIN / USER
   Future<void> _handleSignIn() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-    });
+  setState(() {
+    isLoading = true;
+    errorMessage = null;
+  });
 
-    try {
-      final response = await AuthService.signIn(
-        email: emailController.text,
-        password: passwordController.text,
-      );
+  try {
+    final response = await AuthService.signIn(
+      email: emailController.text,
+      password: passwordController.text,
+    );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final currentUser = data['CurrentUser'] ?? {};
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
 
-        final userId = currentUser['id'];
-        final firstName =
-            currentUser['first_name'] ?? currentUser['username'] ?? '';
-        final lastName = currentUser['last_name'] ?? '';
-        final email = currentUser['email'] ?? '';
+      final token = data['token'];
+      final currentUser = data['CurrentUser'] ?? {};
 
-        if (userId != null) {
-          Provider.of<AuthProvider>(context, listen: false)
-              .setUserData(userId.toString(), firstName, lastName, email);
-          Navigator.pushReplacementNamed(context, '/all-ads');
-        } else {
-          errorMessage = 'Impossible de récupérer l’utilisateur';
-        }
-      } else {
-        errorMessage = 'Email ou mot de passe incorrect';
+      final userId = currentUser['id'];
+      final firstName =
+          currentUser['first_name'] ?? currentUser['username'] ?? '';
+      final lastName = currentUser['last_name'] ?? '';
+      final email = currentUser['email'] ?? '';
+      final bool isAdmin = currentUser['is_admin'] == true;
+
+      if (userId == null || token == null) {
+        setState(() {
+          errorMessage = 'Données utilisateur invalides';
+        });
+        return;
       }
-    } catch (e) {
-      errorMessage = 'Erreur réseau';
-    } finally {
-      setState(() => isLoading = false);
+
+      /// ✅ SAUVEGARDE CORRECTE
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', token);
+      await prefs.setString('userId', userId.toString());
+      await prefs.setString('firstName', firstName);
+      await prefs.setString('lastName', lastName);
+      await prefs.setString('email', email);
+
+      print('✅ SESSION SAUVEGARDÉE : $email');
+
+      /// ✅ PROVIDER
+      Provider.of<AuthProvider>(context, listen: false)
+          .setUserData(userId.toString(), firstName, lastName, email);
+
+      /// ✅ REDIRECTION
+      if (isAdmin) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminPanel()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ProfilePage()),
+        );
+      }
+    } else {
+      setState(() {
+        errorMessage = 'Email ou mot de passe incorrect';
+      });
     }
+  } catch (e) {
+    setState(() {
+      errorMessage = 'Erreur réseau';
+    });
+  } finally {
+    setState(() => isLoading = false);
   }
+}
+
 }

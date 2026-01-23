@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:rentixa/providers/auth_provider.dart';
 import 'package:rentixa/services/auth_service.dart';
 
+// Ensure this path matches your project structure
+import 'package:rentixa/screens/ads/create_ad_modal.dart'; 
 
 class Header extends StatefulWidget {
   final bool isConnected;
@@ -11,6 +13,7 @@ class Header extends StatefulWidget {
   final String? username;
   final Widget? leading;
   final VoidCallback? onSignIn;
+  final VoidCallback? onAddAd;
 
   const Header({
     Key? key,
@@ -20,6 +23,7 @@ class Header extends StatefulWidget {
     this.username,
     this.leading,
     this.onSignIn,
+    this.onAddAd,
   }) : super(key: key);
 
   @override
@@ -27,26 +31,23 @@ class Header extends StatefulWidget {
 }
 
 class _HeaderState extends State<Header> {
-  final TextEditingController _searchController = TextEditingController();
-  bool dropdownOpen = false;
-
   @override
   Widget build(BuildContext context) {
     final isSmallScreen = MediaQuery.of(context).size.width < 600;
     final authProvider = Provider.of<AuthProvider>(context);
-    final isAuthenticated = authProvider.userId != null;
+    
+    final isAuthenticated = authProvider.userId != null && authProvider.userId != "0";
     final userInitials = authProvider.userInitials;
 
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
-      leading: widget.leading ?? const SizedBox.shrink(),
+      leading: widget.leading, 
       title: Row(
         children: [
-          // LOGO
           GestureDetector(
             onTap: () {
-              Navigator.pushReplacementNamed(context, '/all-ads');
+              Navigator.pushReplacementNamed(context, '/home');
             },
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -55,70 +56,48 @@ class _HeaderState extends State<Header> {
                   'assets/logo_ekri.png',
                   height: 32,
                   width: 32,
+                  errorBuilder: (context, error, stackTrace) => 
+                      const Icon(Icons.home, color: Colors.orange),
                 ),
-                const SizedBox(width: 8),
+                if (!isSmallScreen) ...[
+                  const SizedBox(width: 8),
+                  const Text(
+                    "Rentixa",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
           const Spacer(),
 
-          // SEARCH (TEMP REMOVED)
-          if (!isSmallScreen) ...[
-            Container(
-              width: 300,
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Recherche désactivée',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-                readOnly: true,
-                onTap: () {
-                  // SearchModal.show(context); // TEMP REMOVED
-                },
-              ),
-            ),
-            const SizedBox(width: 16),
-          ] else ...[
-            IconButton(
-              icon: const Icon(Icons.search, color: Colors.black87),
-              onPressed: () {
-                // SearchModal.show(context); // TEMP REMOVED
-              },
-              tooltip: 'Recherche (désactivée)',
-            ),
-          ],
-
-          // AUTH BUTTONS
           if (!isAuthenticated) ...[
             IconButton(
               icon: const Icon(Icons.login, color: Colors.black87),
-              onPressed: widget.onSignIn,
+              onPressed: widget.onSignIn ?? () => Navigator.pushNamed(context, '/sign-in'),
               tooltip: 'Se connecter',
             ),
-            IconButton(
-              icon: const Icon(Icons.person_add, color: Colors.black87),
-              onPressed: () {
-                Navigator.pushNamed(context, '/sign-up');
-              },
-              tooltip: "S'inscrire",
-            ),
+            if (!isSmallScreen)
+              TextButton(
+                onPressed: () => Navigator.pushNamed(context, '/sign-up'),
+                child: const Text("S'inscrire", style: TextStyle(color: Colors.black87)),
+              ),
           ] else ...[
+            const SizedBox(width: 8),
             GestureDetector(
-              onTap: () {
-                _showUserMenu(context);
-              },
+              onTap: () => _showUserMenu(context),
               child: CircleAvatar(
+                radius: 18,
                 backgroundColor: Colors.orange,
                 child: Text(
                   userInitials,
                   style: const TextStyle(
                     color: Colors.white,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -128,99 +107,6 @@ class _HeaderState extends State<Header> {
         ],
       ),
     );
-  }
-
-  // CONSERVÉ (non lié à Search / Welcome)
-  Widget _buildMobileMenu(
-    bool isAuthenticated,
-    String userInitials,
-    AuthProvider authProvider,
-  ) {
-    if (!isAuthenticated) {
-      return Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.login, color: Colors.black87),
-            onPressed: widget.onSignIn,
-          ),
-          IconButton(
-            icon: const Icon(Icons.person_add, color: Colors.black87),
-            onPressed: () {
-              Navigator.pushNamed(context, '/sign-up');
-            },
-          ),
-        ],
-      );
-    } else {
-      return IconButton(
-        icon: CircleAvatar(
-          backgroundColor: Colors.grey[200],
-          child: Text(
-            userInitials,
-            style: TextStyle(color: Colors.grey[700]),
-          ),
-        ),
-        onPressed: () => _showUserMenu(context),
-      );
-    }
-  }
-
-  // CONSERVÉ
-  Widget _buildRightSection(
-    bool isAuthenticated,
-    String userInitials,
-    AuthProvider authProvider,
-  ) {
-    if (!isAuthenticated) {
-      return Row(
-        children: [
-          ElevatedButton(
-            onPressed: widget.onSignIn,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey[800],
-            ),
-            child: const Text('Se connecter'),
-          ),
-          const SizedBox(width: 8),
-          OutlinedButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/sign-up');
-            },
-            child: const Text("S'inscrire"),
-          ),
-        ],
-      );
-    } else {
-      return PopupMenuButton<String>(
-        onSelected: (value) async {
-          switch (value) {
-            case 'profile':
-              Navigator.pushNamed(context, '/profile');
-              break;
-            case 'myAds':
-              Navigator.pushNamed(context, '/my-ads');
-              break;
-            case 'logout':
-              await AuthService.logout();
-              authProvider.clear();
-              Navigator.pushReplacementNamed(context, '/sign-in');
-              break;
-          }
-        },
-        itemBuilder: (context) => const [
-          PopupMenuItem(value: 'profile', child: Text('Profile')),
-          PopupMenuItem(value: 'myAds', child: Text('Mes annonces')),
-          PopupMenuItem(value: 'logout', child: Text('Déconnexion')),
-        ],
-        child: CircleAvatar(
-          backgroundColor: Colors.grey[200],
-          child: Text(
-            userInitials,
-            style: TextStyle(color: Colors.grey[700]),
-          ),
-        ),
-      );
-    }
   }
 
   void _showUserMenu(BuildContext context) {
@@ -237,24 +123,25 @@ class _HeaderState extends State<Header> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.person),
-                title: const Text('Profile'),
+                leading: const Icon(Icons.person_outline),
+                title: const Text('Mon Profil'),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushNamed(context, '/profile');
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.list),
+                leading: const Icon(Icons.list_alt),
                 title: const Text('Mes annonces'),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushNamed(context, '/my-ads');
                 },
               ),
+              const Divider(),
               ListTile(
-                leading: const Icon(Icons.logout),
-                title: const Text('Déconnexion'),
+                leading: const Icon(Icons.logout, color: Colors.red),
+                title: const Text('Déconnexion', style: TextStyle(color: Colors.red)),
                 onTap: () async {
                   Navigator.pop(context);
                   await AuthService.logout();

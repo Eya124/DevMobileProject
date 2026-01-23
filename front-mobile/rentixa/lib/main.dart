@@ -1,108 +1,140 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+// --- Providers ---
 import 'package:rentixa/providers/auth_provider.dart';
+import 'package:rentixa/providers/search_provider.dart';
+
+// --- Services & Models ---
+import 'package:rentixa/services/ads_service.dart';
+import 'package:rentixa/models/ads.dart';
+
+// --- Widgets & Pages ---
 import 'package:rentixa/widgets/header.dart';
+import 'package:rentixa/widgets/ad_details_modal.dart';
+import 'package:rentixa/screens/ads/create_ad_modal.dart'; 
 import 'package:rentixa/screens/auth/sign_up.dart';
 import 'package:rentixa/screens/auth/sign_in.dart';
 import 'package:rentixa/screens/auth/verify_otp.dart';
-import 'package:rentixa/screens/chatbot/chat_discussion.dart';
 import 'package:rentixa/screens/auth/profile.dart';
+import 'package:rentixa/screens/auth/users_page.dart';
+import 'package:rentixa/screens/complaint/Add_complaint.dart';
+import 'package:rentixa/screens/complaint/complaint_list.dart';
+import 'package:rentixa/screens/chatbot/chat_discussion.dart';
 
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-void main() {
+  final authProvider = AuthProvider();
+  await authProvider.restoreSession(); // ✅ RESTAURATION SESSION
+
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: authProvider),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        // ChangeNotifierProvider(create: (_) => SearchProvider()), // TEMP REMOVED
+        ChangeNotifierProvider(create: (_) => SearchProvider()),
       ],
-      child: MyApp(),
+      child: const MyApp(),
     ),
   );
 }
 
+
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Ekri App',
+      title: 'Rentixa',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.orange,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+        useMaterial3: true,
       ),
       initialRoute: '/home',
       routes: {
-        '/home': (context) => HomeWithFilter(),
+        '/home': (context) => const HomeWithFilter(),
         '/sign-up': (context) => SignUpPage(),
         '/sign-in': (context) => SignInPage(),
         '/verify-otp': (context) => VerifyOtpPage(),
         '/profile': (context) => const ProfilePage(),
+        '/users': (context) => const UsersPage(),
+        '/admin': (context) => const AdminPanel(),
+        '/complaints': (context) => ComplaintListPage(),
+        '/complaints/add': (context) => AddComplaintPage(),
       },
     );
   }
 }
 
 class HomeWithFilter extends StatefulWidget {
+  const HomeWithFilter({super.key});
+
   @override
-  _HomeWithFilterState createState() => _HomeWithFilterState();
+  State<HomeWithFilter> createState() => _HomeWithFilterState();
 }
 
 class _HomeWithFilterState extends State<HomeWithFilter> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  // TEMP REMOVED (Ads state)
-  // List<Ads> ads = [];
   bool isLoadingAds = false;
   String? errorMessage;
-
-  // Pagination (structure conservée)
-  int currentPage = 1;
-  int itemsPerPage = 15;
-  int totalPages = 1;
 
   @override
   void initState() {
     super.initState();
-
-    // TEMP REMOVED
-    // _loadAds();
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   SearchModal.show(context);
-    // });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadAds();
+    });
   }
 
-  // Pagination logic conserved
-  void _nextPage() {
-    if (currentPage < totalPages) {
-      setState(() => currentPage++);
+  Future<void> _loadAds() async {
+    if (!mounted) return;
+    setState(() {
+      isLoadingAds = true;
+      errorMessage = null;
+    });
+
+    try {
+      final List<Ads> ads = await AdsService.getAllAds();
+      if (mounted) {
+        Provider.of<SearchProvider>(context, listen: false).setSearchResults(ads);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          errorMessage = "Impossible de charger les annonces: $e";
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoadingAds = false;
+        });
+      }
     }
   }
 
-  void _previousPage() {
-    if (currentPage > 1) {
-      setState(() => currentPage--);
-    }
+  void _navigateToCreateAd() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CreateAdModal(); 
+      },
+    );
   }
-
-  void _goToPage(int page) {
-    if (page >= 1 && page <= totalPages) {
-      setState(() => currentPage = page);
-    }
-  }
-
-  // TEMP REMOVED
-  // void _openFilterModal() {}
 
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    final searchProvider = Provider.of<SearchProvider>(context);
+
     final bool isUserLoggedIn =
         authProvider.userId != null && authProvider.userId != "0";
 
     return Scaffold(
-      key: _scaffoldKey,
-
-      // CHAT BUBBLE (conservé)
+      backgroundColor: Colors.grey.shade100,
+      
       floatingActionButton: isUserLoggedIn
           ? FloatingActionButton(
               backgroundColor: Colors.orange,
@@ -112,8 +144,7 @@ class _HomeWithFilterState extends State<HomeWithFilter> {
                   context: context,
                   isScrollControlled: true,
                   shape: const RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(16)),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                   ),
                   builder: (_) => ChatDiscussionModal(),
                 );
@@ -122,103 +153,115 @@ class _HomeWithFilterState extends State<HomeWithFilter> {
           : null,
 
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
+        preferredSize: const Size.fromHeight(70),
         child: Header(
           isConnected: isUserLoggedIn,
           isVerified: isUserLoggedIn,
           isAdmin: false,
           username: authProvider.userInitials,
-          leading: null,
           onSignIn: () {
-            Navigator.pushNamed(context, '/sign-in');
+            Navigator.pushNamed(context, '/home');
           },
+          onAddAd: _navigateToCreateAd, 
+          leading: isUserLoggedIn 
+            ? IconButton(
+                icon: const Icon(Icons.add_box_outlined, color: Colors.orange),
+                onPressed: _navigateToCreateAd,
+                tooltip: "Ajouter une annonce",
+              )
+            : null,
         ),
       ),
 
-      body: Column(
-        children: [
-          // TOP ACTION BAR
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      // TEMP REMOVED
-                      // showDialog(
-                      //   context: context,
-                      //   builder: (context) => CreateAdModal(),
-                      // );
-                    },
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.black87),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 4, vertical: 8),
-                    ),
-                    child: const Text(
-                      'CRÉER UNE ANNONCE',
-                      style: TextStyle(fontSize: 11),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 1,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      // _openFilterModal(); // TEMP REMOVED
-                    },
-                    child: const Icon(Icons.filter_list, size: 16),
-                  ),
-                ),
-              ],
-            ),
-          ),
+      body: RefreshIndicator(
+        onRefresh: _loadAds,
+        child: _buildBody(searchProvider),
+      ),
+    );
+  }
 
-          // CONTENT
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.construction,
-                      size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text(
-                    'Module annonces temporairement désactivé',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
+  Widget _buildBody(SearchProvider searchProvider) {
+    if (isLoadingAds) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(errorMessage!),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadAds,
+              child: const Text("Réessayer"),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (searchProvider.searchResults.isEmpty) {
+      return const Center(
+        child: Text("Aucune annonce disponible pour le moment."),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      itemCount: searchProvider.searchResults.length,
+      itemBuilder: (context, index) {
+        final ad = searchProvider.searchResults[index];
+        return Card(
+          elevation: 1,
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: ListTile(
+            contentPadding: const EdgeInsets.all(12),
+            leading: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                width: 60,
+                height: 60,
+                color: Colors.orange.shade50,
+                child: const Icon(Icons.home_work, color: Colors.orange),
               ),
             ),
-          ),
-
-          // PAGINATION (structure conservée)
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            title: Text(
+              ad.title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                IconButton(
-                  onPressed: _previousPage,
-                  icon: const Icon(Icons.chevron_left),
-                ),
-                Text('Page $currentPage'),
-                IconButton(
-                  onPressed: _nextPage,
-                  icon: const Icon(Icons.chevron_right),
+                const SizedBox(height: 4),
+                Text("${ad.delegation ?? ad.state ?? 'Localisation inconnue'}"),
+                Text(
+                  '${ad.price} DT',
+                  style: const TextStyle(
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AdDetailsModal(
+                    adId: ad.id ?? 0, 
+                    basicAd: ad,
+                  );
+                },
+              );
+            },
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

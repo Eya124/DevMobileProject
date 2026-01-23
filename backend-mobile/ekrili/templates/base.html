@@ -45,7 +45,7 @@
                 </form>
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="{% url 'add_ann' %}">Add annonce</a>
+                        <a class="nav-link active" aria-current="page" href="{% url 'add_annonce' %}">Add annonce</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" aria-current="page" href="{% url 'map' %}">Search by map</a>
@@ -69,10 +69,10 @@
                         </li>
                     {% else %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link" href="{% url 'singup' %}" role="button" aria-expanded="false">Sign Up</a>
+                            <a class="nav-link" href="{% url 'signup' %}" role="button" aria-expanded="false">Sign Up</a>
                         </li>
                         <li class="nav-item dropdown">
-                            <a class="nav-link" href="{% url 'singin' %}" role="button" aria-expanded="false">Sign In</a>
+                            <a class="nav-link" href="{% url 'signin' %}" role="button" aria-expanded="false">Sign In</a>
                         </li>
                     {% endif %}
                 </ul>
