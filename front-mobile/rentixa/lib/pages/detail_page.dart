@@ -231,7 +231,7 @@ class _DetailPageState extends State<DetailPage> {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: Image.network(
-                                'http://localhost:8111${images[index]}',
+                                'http://10.0.2.2:8111${images[index]}',
                                 fit: BoxFit.cover,
                                 width: 80,
                                 height: 80,
@@ -515,7 +515,7 @@ class _DetailPageState extends State<DetailPage> {
                 height: double.infinity,
                 child: images.isNotEmpty
                     ? Image.network(
-                        'http://localhost:8111${images[index]}',
+                        'http://10.0.2.2:8111${images[index]}',
                         fit: BoxFit.cover,
                         width: double.infinity,
                         height: double.infinity,

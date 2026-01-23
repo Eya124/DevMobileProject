@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-// import 'package:fluttercourse/models/ads.dart';
+import 'package:rentixa/models/ads.dart';
 import 'package:provider/provider.dart';
 import '../../models/feedback.dart';
 import '../../services/feedback_service.dart';

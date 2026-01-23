@@ -4,7 +4,7 @@ import 'package:rentixa/models/feedback.dart';
 import 'package:provider/provider.dart';
 import '../../services/feedback_service.dart';
 import '../../providers/auth_provider.dart';
-// import '../../models/ads.dart';
+import '../../models/ads.dart';
 
 class AddEditFeedbackPage extends StatefulWidget {
   final List<Ads> adsList;

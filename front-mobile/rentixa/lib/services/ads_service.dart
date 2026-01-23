@@ -8,8 +8,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AdsService {
   // --- URL CONFIGURATION ---
   static String get baseUrl {
-    // Note: If testing on Android Emulator, change localhost to 10.0.2.2
-    return 'http://localhost:8111/annonces'; 
+    // 1. If running on Web, use localhost
+      return 'http://10.0.2.2:8111/annonces';
+    // 2. If running on Android Emulator, use 10.0.2.2
+    // 3. If running on Physical Device, use your PC's IP 
   }
 
   /// 1. Get all advertisements

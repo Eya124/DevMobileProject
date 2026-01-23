@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:rentixa/models/user.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   // Use different URLs for emulator vs physical device
@@ -8,7 +9,7 @@ class AuthService {
     // For Android emulator, use 10.0.2.2 to access host machine
     // For physical device, use the actual IP address of your computer
     // You may need to change this to your computer's actual IP address
-    return 'http://localhost:8111'; // For physical device (your computer's IP)
+    return 'http://10.0.2.2:8111'; // For physical device (your computer's IP)
     // return 'http://10.0.2.2:8111'; // For emulator
   }
 
@@ -85,5 +86,30 @@ class AuthService {
       headers: {'Content-Type': 'application/json'},
     );
     return response;
+  }
+
+  static Future<http.Response> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    return await http.post(
+      Uri.parse('$baseUrl/users/change-my-password/'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'old_password': oldPassword,
+        'new_password': newPassword,
+      }),
+    );
+  }
+
+  static Future<int> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('user_id') ?? 0;
   }
 }
