@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:rentixa/models/user.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   // Use different URLs for emulator vs physical device
@@ -85,5 +86,10 @@ class AuthService {
       headers: {'Content-Type': 'application/json'},
     );
     return response;
+  }
+
+  static Future<int> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('user_id') ?? 0;
   }
 }

@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:rentixa/admin/UserHomePage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 
 import '../../widgets/header.dart';
 import 'package:rentixa/services/auth_service.dart';
@@ -70,19 +70,13 @@ class _SignInPageState extends State<SignInPage> {
               child: Column(
                 children: [
                   /// LOGO
-                  Image.asset(
-                    'assets/logo_ekri.png',
-                    width: 85,
-                  ),
+                  Image.asset('assets/logo_ekri.png', width: 85),
                   const SizedBox(height: 18),
 
                   /// TITLE
                   const Text(
                     'Se connecter',
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 6),
@@ -204,18 +198,16 @@ class _SignInPageState extends State<SignInPage> {
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
-          validator: validator ??
+          validator:
+              validator ??
               (v) => v == null || v.isEmpty ? 'Champ obligatoire' : null,
           decoration: InputDecoration(
             prefixIcon: Icon(icon, color: primaryOrange),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: primaryOrange, width: 2),
+              borderSide: const BorderSide(color: primaryOrange, width: 2),
             ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
         ),
       ],
@@ -251,12 +243,9 @@ class _SignInPageState extends State<SignInPage> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: primaryOrange, width: 2),
+              borderSide: const BorderSide(color: primaryOrange, width: 2),
             ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
         ),
       ],
@@ -277,10 +266,7 @@ class _SignInPageState extends State<SignInPage> {
           Icon(Icons.error_outline, color: color),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              text,
-              style: TextStyle(color: color),
-            ),
+            child: Text(text, style: TextStyle(color: color)),
           ),
         ],
       ),
@@ -319,26 +305,28 @@ class _SignInPageState extends State<SignInPage> {
         final bool isAdmin = currentUser['is_admin'] == true;
 
         if (userId != null) {
-          Provider.of<AuthProvider>(context, listen: false)
-              .setUserData(userId.toString(), firstName, lastName, email);
+          Provider.of<AuthProvider>(
+            context,
+            listen: false,
+          ).setUserData(userId.toString(), firstName, lastName, email);
 
+          // --- C'EST ICI QUE LA MODIFICATION SE PASSE ---
           if (isAdmin) {
-            // 👉 ADMIN
+            // 👉 REDIRECTION ADMIN
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                builder: (_) => const AdminPanel(),
-              ),
+              MaterialPageRoute(builder: (_) => const AdminPanel()),
             );
           } else {
-            // 👉 USER NORMAL
+            // 👉 REDIRECTION USER NORMAL (VERS LA PAGE DES ANNONCES)
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (_) => const ProfilePage(),
-              ),
+                builder: (_) => const UserHomePage(),
+              ), // Remplace ProfilePage()
             );
           }
+          // ----------------------------------------------
         } else {
           errorMessage = 'Impossible de récupérer l’utilisateur';
         }
