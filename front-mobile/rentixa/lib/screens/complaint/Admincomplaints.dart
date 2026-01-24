@@ -115,15 +115,17 @@ class _AdminComplaintPageState extends State<AdminComplaintPage> {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ✅ Icône de réponse désormais toujours visible
-            IconButton(
-              icon: const Icon(Icons.reply, color: Colors.blue),
-              onPressed: () async {
-                await _replyDialog(c);
-                load();
-              },
-            ),
-            // ℹ️ Détails
+            // ✅ Reply visible seulement si status != replied
+            if (c.status.toLowerCase().trim() != 'replied')
+              IconButton(
+                icon: const Icon(Icons.reply, color: Colors.blue),
+                onPressed: () async {
+                  await _replyDialog(c);
+                  load();
+                },
+              ),
+
+            // ℹ️ Détails toujours visibles
             IconButton(
               icon: const Icon(Icons.info_outline, color: Colors.grey),
               onPressed: () => _showDetailsDialog(c),
@@ -142,13 +144,16 @@ class _AdminComplaintPageState extends State<AdminComplaintPage> {
         return Colors.orange;
       case 'resolved':
         return Colors.green;
+      case 'replied':
+        return Colors.green;
       default:
-        return Colors.grey;
+        return Colors.green;
     }
   }
 
   Future<void> _replyDialog(Complaint c) async {
     final controller = TextEditingController();
+
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -224,6 +229,10 @@ class _AdminComplaintPageState extends State<AdminComplaintPage> {
   }
 
   String _formatDate(DateTime date) {
-    return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+    return "${date.day.toString().padLeft(2, '0')}/"
+        "${date.month.toString().padLeft(2, '0')}/"
+        "${date.year} "
+        "${date.hour.toString().padLeft(2, '0')}:"
+        "${date.minute.toString().padLeft(2, '0')}";
   }
 }
