@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:rentixa/screens/complaint/Admincomplaints.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rentixa/screens/complaint/complaint_list.dart';
 
@@ -23,7 +24,7 @@ class _AdminPanelState extends State<AdminPanel> {
   /// 🔥 MAP ADMIN
   final Map<int, bool> adminMap = {};
 
-  final String baseUrl = 'http://10.0.2.2:8111';
+  final String baseUrl = 'http://localhost:8111';
 
   @override
   void initState() {
@@ -236,7 +237,7 @@ class _AdminPanelState extends State<AdminPanel> {
                   context,
                   MaterialPageRoute(
                     builder: (_) =>
-                        const ComplaintListPage(), // créer ce screen
+                        const AdminComplaintPage(), // créer ce screen
                   ),
                 );
               },
