@@ -3,10 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:rentixa/models/complaint.dart';
 import 'package:rentixa/providers/auth_provider.dart';
 import 'package:rentixa/screens/complaint/Add_complaint.dart';
-import 'package:rentixa/services/auth_service.dart';
 import 'package:rentixa/services/complaint_service.dart';
-
-// ✅ Import du Header
 import 'package:rentixa/widgets/header.dart';
 
 class ComplaintListPage extends StatefulWidget {
@@ -28,21 +25,37 @@ class _ComplaintsPageState extends State<ComplaintListPage> {
 
   Future<void> load() async {
     setState(() => loading = true);
+
     try {
-      complaints = await ComplaintService.getAll();
+      final allComplaints = await ComplaintService.getAll();
+
+      // Récupérer l'utilisateur connecté
+      final userIdStr = Provider.of<AuthProvider>(
+        context,
+        listen: false,
+      ).userId;
+      final int userId = int.tryParse(userIdStr ?? '0') ?? 0;
+
+      // Debug : vérifier les IDs
+      debugPrint("userId Flutter: $userId");
+      allComplaints.forEach(
+        (c) => debugPrint('Complaint: ${c.title}, userId=${c.userId}'),
+      );
+
+      // Filtrer les réclamations de l'utilisateur
+      complaints = allComplaints.where((c) => c.userId == userId).toList();
     } catch (e) {
       debugPrint("Erreur de chargement: $e");
+      complaints = [];
     }
+
     setState(() => loading = false);
   }
-
-  // ... (Tes méthodes addComplaintDialog et replyDialog restent ici) ...
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F6F2), // Couleur de fond harmonisée
-      // 1. ✅ AJOUT DU HEADER ICI
+      backgroundColor: const Color(0xFFF9F6F2),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(60),
         child: Consumer<AuthProvider>(
@@ -50,23 +63,21 @@ class _ComplaintsPageState extends State<ComplaintListPage> {
             return Header(
               isConnected: authProvider.userId != null,
               isVerified: authProvider.userId != null,
-              isAdmin: false, // À mettre à true si c'est le panel admin
+              isAdmin: false,
               username: authProvider.userInitials,
             );
           },
         ),
       ),
-
       body: Column(
         children: [
-          // Titre de la page sous le header
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Gestion des plaintes',
+                  'Mes réclamations',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 IconButton(
@@ -76,7 +87,6 @@ class _ComplaintsPageState extends State<ComplaintListPage> {
               ],
             ),
           ),
-
           Expanded(
             child: loading
                 ? const Center(
@@ -86,17 +96,11 @@ class _ComplaintsPageState extends State<ComplaintListPage> {
                 ? const Center(child: Text("Aucune réclamation trouvée"))
                 : ListView.builder(
                     itemCount: complaints.length,
-                    itemBuilder: (_, i) {
-                      final c = complaints[i];
-                      return _buildComplaintCard(
-                        c,
-                      ); // Utilisation de la fonction de dessin
-                    },
+                    itemBuilder: (_, i) => _buildComplaintCard(complaints[i]),
                   ),
           ),
         ],
       ),
-
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.orange,
         onPressed: () async {
@@ -111,7 +115,6 @@ class _ComplaintsPageState extends State<ComplaintListPage> {
     );
   }
 
-  // 2. ✅ LA FONCTION QUI DESSINE CHAQUE CARTE (pour que ton code fonctionne)
   Widget _buildComplaintCard(Complaint c) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -153,7 +156,7 @@ class _ComplaintsPageState extends State<ComplaintListPage> {
     switch (status.toLowerCase()) {
       case 'pending':
         return Colors.red;
-      case 'in progress':
+      case 'in_progress':
         return Colors.orange;
       case 'resolved':
         return Colors.green;

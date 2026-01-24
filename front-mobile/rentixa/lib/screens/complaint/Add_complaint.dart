@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:rentixa/providers/auth_provider.dart';
 import 'package:rentixa/services/complaint_service.dart';
 import 'package:rentixa/widgets/header.dart';
+import 'package:rentixa/screens/complaint/complaint_list.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AddComplaintPage extends StatefulWidget {
@@ -28,40 +29,43 @@ class _AddComplaintPageState extends State<AddComplaintPage> {
     super.dispose();
   }
 
-  // --- LOGIQUE DE RÉCUPÉRATION DU TOKEN ET ENVOI ---
   Future<void> _submitComplaint() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _submitting = true);
 
     try {
-      // 1. Récupérer le token depuis Shared Preferences
       final prefs = await SharedPreferences.getInstance();
-      final String? token = prefs.getString('auth_token');
+      final String? token = prefs.getString('token');
 
       if (token == null || token.isEmpty) {
         throw Exception("Session expirée : Veuillez vous reconnecter.");
       }
 
-      // 2. Appel au service avec le token
+      final userId = int.parse(
+        Provider.of<AuthProvider>(context, listen: false).userId!,
+      );
+
       await ComplaintService.create(
         title: _titleController.text.trim(),
         description: _textController.text.trim(),
+        userId: userId,
       );
 
       if (!mounted) return;
 
       _showSnackBar("Réclamation envoyée avec succès !", Colors.green);
-      Navigator.pop(context);
+
+      // Naviguer vers la page liste
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const ComplaintListPage()),
+      );
     } catch (e) {
       if (!mounted) return;
-
-      String errorMessage = e.toString().replaceAll("Exception:", "").trim();
-      _showSnackBar("Erreur : $errorMessage", Colors.red);
+      _showSnackBar("Erreur : ${e.toString()}", Colors.red);
     } finally {
-      if (mounted) {
-        setState(() => _submitting = false);
-      }
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
@@ -106,7 +110,6 @@ class _AddComplaintPageState extends State<AddComplaintPage> {
                 ),
               ),
               const SizedBox(height: 32),
-
               _buildLabel("Titre"),
               const SizedBox(height: 8),
               TextFormField(
@@ -117,9 +120,7 @@ class _AddComplaintPageState extends State<AddComplaintPage> {
                 ),
                 validator: (v) => v!.isEmpty ? "Titre requis" : null,
               ),
-
               const SizedBox(height: 20),
-
               _buildLabel("Description"),
               const SizedBox(height: 8),
               TextFormField(
@@ -131,9 +132,7 @@ class _AddComplaintPageState extends State<AddComplaintPage> {
                 ),
                 validator: (v) => v!.isEmpty ? "Description requise" : null,
               ),
-
               const SizedBox(height: 40),
-
               SizedBox(
                 width: double.infinity,
                 height: 55,
@@ -160,7 +159,6 @@ class _AddComplaintPageState extends State<AddComplaintPage> {
     );
   }
 
-  // --- WIDGETS DE STYLE ---
   Widget _buildLabel(String text) =>
       Text(text, style: const TextStyle(fontWeight: FontWeight.bold));
 

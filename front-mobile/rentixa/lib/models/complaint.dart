@@ -1,12 +1,12 @@
 class Complaint {
   final int id;
   final String title;
-  final String description; // correspond à description dans Django
+  final String description;
   final String status;
-  final String? reply; // si tu ajoutes ce champ dans Django
+  final String? reply;
   final int userId;
   final DateTime createdAt;
-  final DateTime updatedAt; // ajouté pour refléter Django
+  final DateTime updatedAt;
 
   Complaint({
     required this.id,
@@ -23,25 +23,12 @@ class Complaint {
     return Complaint(
       id: json['id'],
       title: json['title'],
-      description: json['description'], // corrige json['Text']
+      description: json['Text'], // ⚠️ corrige la clé
       status: json['status'],
-      reply: json['reply'], // nullable
-      userId: json['user'], // id de l'utilisateur
+      reply: json['reply'] as String?, // nullable
+      userId: json['user'] is int ? json['user'] : json['user']['id'],
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'description': description,
-      'status': status,
-      'reply': reply,
-      'user': userId,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
-    };
   }
 }

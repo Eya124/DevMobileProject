@@ -9,7 +9,7 @@ from .views import (
 )
 
 urlpatterns = [
-    path('all', getAllComplaints, name='get_all_complaints'),
+    path('', getAllComplaints, name='get_all_complaints'),
     path('<int:id>/', getComplaintById, name='get_complaint_by_id'),
     path('create/', createComplaint, name='create_complaint'),
     path('update/<int:id>/', updateComplaint, name='update_complaint'),

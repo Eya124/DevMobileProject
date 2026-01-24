@@ -4,7 +4,7 @@ import 'package:rentixa/providers/auth_provider.dart';
 import 'package:rentixa/services/auth_service.dart';
 
 // Ensure this path matches your project structure
-import 'package:rentixa/screens/ads/create_ad_modal.dart'; 
+import 'package:rentixa/screens/ads/create_ad_modal.dart';
 
 class Header extends StatefulWidget {
   final bool isConnected;
@@ -35,14 +35,15 @@ class _HeaderState extends State<Header> {
   Widget build(BuildContext context) {
     final isSmallScreen = MediaQuery.of(context).size.width < 600;
     final authProvider = Provider.of<AuthProvider>(context);
-    
-    final isAuthenticated = authProvider.userId != null && authProvider.userId != "0";
+
+    final isAuthenticated =
+        authProvider.userId != null && authProvider.userId != "0";
     final userInitials = authProvider.userInitials;
 
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
-      leading: widget.leading, 
+      leading: widget.leading,
       title: Row(
         children: [
           GestureDetector(
@@ -56,7 +57,7 @@ class _HeaderState extends State<Header> {
                   'assets/logo_ekri.png',
                   height: 32,
                   width: 32,
-                  errorBuilder: (context, error, stackTrace) => 
+                  errorBuilder: (context, error, stackTrace) =>
                       const Icon(Icons.home, color: Colors.orange),
                 ),
                 if (!isSmallScreen) ...[
@@ -78,13 +79,18 @@ class _HeaderState extends State<Header> {
           if (!isAuthenticated) ...[
             IconButton(
               icon: const Icon(Icons.login, color: Colors.black87),
-              onPressed: widget.onSignIn ?? () => Navigator.pushNamed(context, '/sign-in'),
+              onPressed:
+                  widget.onSignIn ??
+                  () => Navigator.pushNamed(context, '/sign-in'),
               tooltip: 'Se connecter',
             ),
             if (!isSmallScreen)
               TextButton(
                 onPressed: () => Navigator.pushNamed(context, '/sign-up'),
-                child: const Text("S'inscrire", style: TextStyle(color: Colors.black87)),
+                child: const Text(
+                  "S'inscrire",
+                  style: TextStyle(color: Colors.black87),
+                ),
               ),
           ] else ...[
             const SizedBox(width: 8),
@@ -138,10 +144,21 @@ class _HeaderState extends State<Header> {
                   Navigator.pushNamed(context, '/my-ads');
                 },
               ),
+              ListTile(
+                leading: const Icon(Icons.list_alt),
+                title: const Text('Mes reclamations'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/complaints');
+                },
+              ),
               const Divider(),
               ListTile(
                 leading: const Icon(Icons.logout, color: Colors.red),
-                title: const Text('Déconnexion', style: TextStyle(color: Colors.red)),
+                title: const Text(
+                  'Déconnexion',
+                  style: TextStyle(color: Colors.red),
+                ),
                 onTap: () async {
                   Navigator.pop(context);
                   await AuthService.logout();
