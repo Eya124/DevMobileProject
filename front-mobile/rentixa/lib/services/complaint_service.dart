@@ -66,6 +66,23 @@ class ComplaintService {
     );
   }
 
+  /// ➕ UPDATE COMPLAINT
+  static Future<void> update({
+    required int id,
+    required String description,
+  }) async {
+    final token = await _token();
+
+    await http.put(
+      Uri.parse('$baseUrl/update/$id/'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'description': description}),
+    );
+  }
+
   /// 💬 REPLY
   static Future<void> reply({
     required int id,

@@ -144,14 +144,15 @@ class _HeaderState extends State<Header> {
                   Navigator.pushNamed(context, '/my-ads');
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.list_alt),
-                title: const Text('Mes reclamations'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/complaints');
-                },
-              ),
+              if (!widget.isAdmin)
+                ListTile(
+                  leading: const Icon(Icons.list_alt),
+                  title: const Text('Mes réclamations'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/complaints');
+                  },
+                ),
               const Divider(),
               ListTile(
                 leading: const Icon(Icons.logout, color: Colors.red),
