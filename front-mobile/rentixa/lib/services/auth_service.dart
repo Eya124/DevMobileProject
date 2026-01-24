@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AuthService {
   // Use different URLs for emulator vs physical device
   static String get baseUrl {
-    // For Android emulator, use 10.0.2.2 to access host machine
+    // For Android emulator, use localhost to access host machine
     // For physical device, use the actual IP address of your computer
     // You may need to change this to your computer's actual IP address
     return 'http://10.0.2.2:8111'; // For physical device (your computer's IP)
