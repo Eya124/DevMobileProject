@@ -23,6 +23,7 @@ class _ComplaintsPageState extends State<ComplaintListPage> {
     load();
   }
 
+  /// 🔄 Charge les réclamations de l'utilisateur
   Future<void> load() async {
     setState(() => loading = true);
 
@@ -30,17 +31,8 @@ class _ComplaintsPageState extends State<ComplaintListPage> {
       final allComplaints = await ComplaintService.getAll();
 
       // Récupérer l'utilisateur connecté
-      final userIdStr = Provider.of<AuthProvider>(
-        context,
-        listen: false,
-      ).userId;
+      final userIdStr = Provider.of<AuthProvider>(context, listen: false).userId;
       final int userId = int.tryParse(userIdStr ?? '0') ?? 0;
-
-      // Debug : vérifier les IDs
-      debugPrint("userId Flutter: $userId");
-      allComplaints.forEach(
-        (c) => debugPrint('Complaint: ${c.title}, userId=${c.userId}'),
-      );
 
       // Filtrer les réclamations de l'utilisateur
       complaints = allComplaints.where((c) => c.userId == userId).toList();
@@ -93,11 +85,11 @@ class _ComplaintsPageState extends State<ComplaintListPage> {
                     child: CircularProgressIndicator(color: Colors.orange),
                   )
                 : complaints.isEmpty
-                ? const Center(child: Text("Aucune réclamation trouvée"))
-                : ListView.builder(
-                    itemCount: complaints.length,
-                    itemBuilder: (_, i) => _buildComplaintCard(complaints[i]),
-                  ),
+                    ? const Center(child: Text("Aucune réclamation trouvée"))
+                    : ListView.builder(
+                        itemCount: complaints.length,
+                        itemBuilder: (_, i) => _buildComplaintCard(complaints[i]),
+                      ),
           ),
         ],
       ),
@@ -115,6 +107,7 @@ class _ComplaintsPageState extends State<ComplaintListPage> {
     );
   }
 
+  /// 📝 Carte de réclamation avec Update + Delete
   Widget _buildComplaintCard(Complaint c) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -141,17 +134,82 @@ class _ComplaintsPageState extends State<ComplaintListPage> {
             ),
           ],
         ),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete, color: Colors.redAccent),
-          onPressed: () async {
-            await ComplaintService.delete(c.id);
-            load();
-          },
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 📝 Update
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.blue),
+              onPressed: () async {
+                await _updateComplaintDialog(c);
+                load();
+              },
+            ),
+            // ❌ Delete
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.redAccent),
+              onPressed: () async {
+                await ComplaintService.delete(c.id);
+                load();
+              },
+            ),
+          ],
         ),
       ),
     );
   }
 
+  /// 🔹 Dialogue pour modifier la réclamation
+  Future<void> _updateComplaintDialog(Complaint c) async {
+    final titleController = TextEditingController(text: c.title);
+    final descController = TextEditingController(text: c.description);
+
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Modifier la réclamation"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: titleController,
+              decoration: const InputDecoration(labelText: "Titre"),
+            ),
+            TextField(
+              controller: descController,
+              decoration: const InputDecoration(labelText: "Description"),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Annuler"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            onPressed: () async {
+              if (titleController.text.trim().isEmpty ||
+                  descController.text.trim().isEmpty) return;
+
+              await ComplaintService.update(
+                id: c.id,
+                title: titleController.text.trim(),
+                description: descController.text.trim(),
+              );
+
+              if (mounted) Navigator.pop(context);
+              load();
+            },
+            child: const Text("Enregistrer", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 🔹 Couleur selon status
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'pending':

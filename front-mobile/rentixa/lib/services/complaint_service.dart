@@ -69,18 +69,24 @@ class ComplaintService {
   /// ➕ UPDATE COMPLAINT
   static Future<void> update({
     required int id,
+    required String title,
     required String description,
   }) async {
     final token = await _token();
+    if (token == null) throw Exception('Token manquant');
 
-    await http.put(
-      Uri.parse('$baseUrl/update/$id/'),
+    final response = await http.put(
+      Uri.parse('$baseUrl/update/$id/'), // Endpoint backend
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({'description': description}),
+      body: jsonEncode({'title': title, 'description': description}),
     );
+
+    if (response.statusCode != 200) {
+      throw Exception('Impossible de mettre à jour la réclamation');
+    }
   }
 
   /// 💬 REPLY
