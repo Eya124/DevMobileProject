@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/feedback.dart';
 
 class FeedbackService {
-  static const String baseUrl = "http://172.17.237.201:8111";
+  static const String baseUrl = "http://10.0.2.2:8111";
 
   static Future<void> submitFeedback(CreateFeedbackModel feedback) async {
     final response = await http.post(

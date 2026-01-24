@@ -49,7 +49,7 @@ static Future<List<ChatHistoryModel>> getHistory(int userId) async {
  /// Delete message
   static Future<void> deleteMessage(int messageId) async {
     final response = await http.delete(
-      Uri.parse("$baseUrl/message/delete/$messageId"),
+      Uri.parse("$baseUrl/message/delete/$messageId/"),
       headers: {"Content-Type": "application/json"},
     );
 
